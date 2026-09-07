@@ -1,16 +1,35 @@
+import type { GuessComparison } from '../types/game'
+
 type WrongAnswerProps = {
   message: string
+  comparison?: GuessComparison | null
 }
 
 // The clue card and answer field stay live underneath, so this is feedback
 // only - it needs no button of its own to move the round on.
-export function WrongAnswer({ message }: WrongAnswerProps) {
+export function WrongAnswer({ message, comparison }: WrongAnswerProps) {
   return (
     <section className="wrong-answer wrong-answer--inline" aria-live="polite">
       <span className="wrong-answer__icon" aria-hidden="true">
         ❌
       </span>
-      <p>{message}</p>
+      <div className="wrong-answer__body">
+        <p>{message}</p>
+        {comparison ? (
+          <p className="guess-compare">
+            <span className="guess-compare__flag" aria-hidden="true">
+              {comparison.flag}
+            </span>
+            <span className="guess-compare__name">{comparison.name}</span>
+            <span className="guess-compare__value">{comparison.value}</span>
+            <span className="guess-compare__sep" aria-hidden="true">
+              →
+            </span>
+            <span className="guess-compare__label">you need</span>
+            <span className="guess-compare__target">{comparison.target}</span>
+          </p>
+        ) : null}
+      </div>
     </section>
   )
 }

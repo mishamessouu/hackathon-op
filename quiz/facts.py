@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from pathlib import Path
 from typing import List, Optional
@@ -77,13 +78,39 @@ def _format_population(value) -> Optional[str]:
     return "About {:,} people".format(round(people, -3))
 
 
+def _pick_timezone(record: dict) -> Optional[dict]:
+    """Choose the zone a player would associate with the country.
+
+    Multi-zone countries are listed in an arbitrary order, so the first entry
+    can be badly misleading - it put Russia in Kamchatka (UTC+12) rather than
+    Moscow (UTC+03). Prefer the zone named after the capital. Falling back to
+    the first entry beats guessing from longitude, which moved Brazil, Canada,
+    Mexico and Kazakhstan off answers that were already right.
+    """
+    zones = record.get("timezones") or []
+    if not zones:
+        return None
+
+    def simplify(value):
+        return re.sub(r"[^a-z]", "", (value or "").lower())
+
+    capital = simplify(record.get("capital"))
+    if capital:
+        for zone in zones:
+            city = (zone.get("zoneName") or "").split("/")[-1]
+            if simplify(city) == capital:
+                return zone
+    return zones[0]
+
+
 def facts_from_record(record: dict) -> dict:
     """Map one ApogeoAPI record onto the clue categories the game renders."""
     facts = {}
 
     timezones = record.get("timezones") or []
-    if timezones:
-        offset = timezones[0].get("gmtOffsetName")
+    chosen = _pick_timezone(record)
+    if chosen:
+        offset = chosen.get("gmtOffsetName")
         if offset:
             zones = len({zone.get("gmtOffsetName") for zone in timezones})
             others = zones - 1

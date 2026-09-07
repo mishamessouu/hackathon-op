@@ -42,6 +42,15 @@ export type RevealedCountry = {
   lng: number | null
 }
 
+/** How the guessed country answers the clue that was on screen. */
+export type GuessComparison = {
+  name: string
+  flag: string
+  category: string
+  value: string
+  target: string
+}
+
 export type AnswerResponse = {
   correct: boolean
   score: number
@@ -49,6 +58,7 @@ export type AnswerResponse = {
   message?: string
   nextQuestion?: GameQuestion
   country?: RevealedCountry
+  comparison?: GuessComparison | null
 }
 
 export type GameState = 'start' | 'playing' | 'wrong' | 'solved' | 'lost'

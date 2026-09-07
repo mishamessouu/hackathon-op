@@ -6,10 +6,18 @@ import { CaseSolved } from './components/CaseSolved'
 import { ClueCard } from './components/ClueCard'
 import { GameHeader } from './components/GameHeader'
 import { ProgressIndicator } from './components/ProgressIndicator'
+import { Quickscope } from './components/Quickscope'
 import { StartScreen } from './components/StartScreen'
 import { GlobeBoundary } from './components/GlobeBoundary'
 import { WrongAnswer } from './components/WrongAnswer'
-import type { Guess, GameQuestion, GameState, Option, RevealedCountry } from './types/game'
+import type {
+  Guess,
+  GameQuestion,
+  GameState,
+  GuessComparison,
+  Option,
+  RevealedCountry,
+} from './types/game'
 
 // three.js is heavy, so it must not block the first paint.
 const GuessGlobe = lazy(() => import('./components/GuessGlobe'))
@@ -22,11 +30,13 @@ function App() {
   const [score, setScore] = useState(0)
   const [roundScore, setRoundScore] = useState(0)
   const [wrongMessage, setWrongMessage] = useState('')
+  const [comparison, setComparison] = useState<GuessComparison | null>(null)
   const [revealed, setRevealed] = useState<RevealedCountry | null>(null)
   const [guesses, setGuesses] = useState<Guess[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [isQuickscoping, setIsQuickscoping] = useState(false)
 
   // The dropdown list comes from countries.csv via the API.
   const loadCountries = useCallback(() => {
@@ -40,6 +50,8 @@ function App() {
 
   useEffect(loadCountries, [loadCountries])
 
+  const endQuickscope = useCallback(() => setIsQuickscoping(false), [])
+
   async function handleStart() {
     setIsLoading(true)
     setErrorMessage('')
@@ -50,7 +62,9 @@ function App() {
       setRoundScore(0)
       setGuesses([])
       setWrongMessage('')
+      setComparison(null)
       setRevealed(null)
+      setIsQuickscoping(false)
       setGameState('playing')
     } catch (error) {
       setErrorMessage((error as Error).message)
@@ -88,10 +102,13 @@ function App() {
         setRevealed(result.country ?? null)
         setGameState('solved')
         setWrongMessage('')
+        setComparison(null)
+        setIsQuickscoping(true)
         return
       }
 
       setWrongMessage(result.message ?? 'Not quite. The investigation continues…')
+      setComparison(result.comparison ?? null)
 
       if (result.gameOver) {
         setRevealed(result.country ?? null)
@@ -129,7 +146,9 @@ function App() {
                 clueValue={question.score}
               />
 
-              {gameState === 'wrong' && <WrongAnswer message={wrongMessage} />}
+              {gameState === 'wrong' && (
+                <WrongAnswer message={wrongMessage} comparison={comparison} />
+              )}
 
               {isGuessing && (
                 <div className={gameState === 'wrong' ? 'clue-header spacing-top' : 'clue-header'}>
@@ -229,6 +248,8 @@ function App() {
           ) : null}
         </main>
       )}
+
+      {isQuickscoping && <Quickscope roundScore={roundScore} onDone={endQuickscope} />}
     </div>
   )
 }

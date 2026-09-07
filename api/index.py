@@ -16,11 +16,14 @@ from flask import Flask, jsonify, request
 from quiz import session
 from quiz.facts import playable_countries, using_live_api
 from quiz.loop import (
+    CATEGORY_LABELS,
+    HINT_CATEGORIES,
     TOTAL_CLUES,
     build_clue,
     flag_emoji,
     is_correct,
     load_countries,
+    normalise_answer,
     score_for,
 )
 
@@ -65,6 +68,35 @@ def _reveal(state: dict) -> dict:
         "numericCode": entry.numeric_code if entry else "",
         "lat": entry.latitude if entry else None,
         "lng": entry.longitude if entry else None,
+    }
+
+
+def _comparison(state: dict, guess: str) -> Optional[dict]:
+    """How the guessed country answers the clue currently on screen.
+
+    A wrong guess is more interesting when it tells you something: guess Sweden
+    against a UTC+04:00 clue and seeing "Sweden UTC+01:00" shows how far off you
+    were. The facts are already cached, so this costs no extra API call.
+    """
+    hint_index = state["hint_index"]
+    if hint_index >= len(HINT_CATEGORIES):
+        return None
+    category = HINT_CATEGORIES[hint_index]
+
+    wanted = normalise_answer(guess)
+    entry = next(
+        (c for c in playable_countries() if normalise_answer(c["name"]) == wanted), None
+    )
+    if entry is None:
+        return None
+
+    return {
+        "name": entry["name"],
+        "flag": entry["facts"].get("flag") or flag_emoji(entry["iso2"]),
+        "category": CATEGORY_LABELS.get(category, category),
+        "value": entry["facts"].get(category) or "No data",
+        # The target value was already on screen as the clue, so it is not a leak.
+        "target": state["facts"].get(category) or "No data",
     }
 
 
@@ -144,6 +176,8 @@ def guess() -> Tuple[Any, int]:
             }
         ), 200
 
+    comparison = _comparison(state, answer)
+
     if hint_index + 1 >= TOTAL_CLUES:
         return jsonify(
             {
@@ -152,6 +186,7 @@ def guess() -> Tuple[Any, int]:
                 "gameOver": True,
                 "message": "The trail goes cold. Start a new investigation.",
                 "country": _reveal(state),
+                "comparison": comparison,
             }
         ), 200
 
@@ -163,6 +198,7 @@ def guess() -> Tuple[Any, int]:
             "gameOver": False,
             "message": "Not quite. The investigation continues…",
             "nextQuestion": _question(state),
+            "comparison": comparison,
         }
     ), 200
 

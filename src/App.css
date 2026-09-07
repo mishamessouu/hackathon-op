@@ -480,6 +480,47 @@
   font-size: 0.95rem;
 }
 
+.wrong-answer__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* What your guess would have answered, against what the clue asked for. */
+.guess-compare {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #fee2e2;
+}
+
+.guess-compare__flag {
+  font-size: 1rem;
+}
+
+.guess-compare__name {
+  font-weight: 700;
+}
+
+.guess-compare__value {
+  color: #fca5a5;
+  font-variant-numeric: tabular-nums;
+}
+
+.guess-compare__sep,
+.guess-compare__label {
+  color: #94a3b8;
+}
+
+.guess-compare__target {
+  color: #2dd4bf;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .spacing-top {
   margin-top: 12px;
 }
@@ -586,5 +627,323 @@
 
   .progress-indicator {
     flex-direction: column;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   MLG quickscope - the correct-answer celebration. Everything here is drawn in
+   CSS: no video, no assets. See components/Quickscope.tsx for the timing.
+   --------------------------------------------------------------------------- */
+
+.quickscope {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  overflow: hidden;
+  pointer-events: none;
+  animation: quickscope-exit 420ms ease-in 2580ms both;
+}
+
+@keyframes quickscope-exit {
+  to {
+    opacity: 0;
+  }
+}
+
+/* The muzzle flash that hides the cut into the scope. */
+.quickscope__flash {
+  position: absolute;
+  inset: 0;
+  background: #f8fafc;
+  animation: quickscope-flash 360ms ease-out both;
+}
+
+@keyframes quickscope-flash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Two tinted layers jerking apart for a cheap chromatic-aberration punch. */
+.quickscope__aberration {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.quickscope__aberration--red {
+  background: radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.6), transparent 62%);
+  animation: quickscope-aberrate-left 220ms steps(2) 380ms 4 both;
+}
+
+.quickscope__aberration--cyan {
+  background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.6), transparent 62%);
+  animation: quickscope-aberrate-right 220ms steps(2) 380ms 4 both;
+}
+
+@keyframes quickscope-aberrate-left {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.65;
+    transform: translate3d(-16px, 4px, 0);
+  }
+}
+
+@keyframes quickscope-aberrate-right {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.65;
+    transform: translate3d(16px, -4px, 0);
+  }
+}
+
+/* Scope and hitmarkers ride together so the recoil shakes both. */
+.quickscope__recoil {
+  position: absolute;
+  inset: 0;
+  animation: quickscope-recoil 1000ms ease-out 380ms both;
+}
+
+@keyframes quickscope-recoil {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  4% {
+    transform: translate3d(-12px, 9px, 0);
+  }
+  10% {
+    transform: translate3d(11px, -8px, 0);
+  }
+  18% {
+    transform: translate3d(-8px, -6px, 0);
+  }
+  26% {
+    transform: translate3d(7px, 7px, 0);
+  }
+  36% {
+    transform: translate3d(-5px, 4px, 0);
+  }
+  48% {
+    transform: translate3d(4px, -3px, 0);
+  }
+  62% {
+    transform: translate3d(-2px, 2px, 0);
+  }
+}
+
+/* A circle with a viewport-sized shadow ring: the shadow is the vignette, so
+   scaling the circle zooms the scope without animating a gradient stop. */
+.quickscope__lens {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 76vmin;
+  height: 76vmin;
+  margin: -38vmin 0 0 -38vmin;
+  border: 3px solid rgba(226, 232, 240, 0.85);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 100vmax rgba(2, 8, 23, 0.9),
+    inset 0 0 90px rgba(2, 8, 23, 0.85),
+    inset 0 0 40px rgba(45, 212, 191, 0.14);
+  animation: quickscope-zoom 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes quickscope-zoom {
+  0% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+  40% {
+    opacity: 1;
+  }
+  72% {
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Crosshair: two hairlines across the glass, plus a ranging ring. */
+.quickscope__reticle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    linear-gradient(
+      to right,
+      transparent calc(50% - 1px),
+      rgba(226, 232, 240, 0.7) calc(50% - 1px),
+      rgba(226, 232, 240, 0.7) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 1px),
+      rgba(226, 232, 240, 0.7) calc(50% - 1px),
+      rgba(226, 232, 240, 0.7) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+}
+
+.quickscope__reticle::after {
+  content: '';
+  position: absolute;
+  inset: 34%;
+  border: 1px solid rgba(226, 232, 240, 0.35);
+  border-radius: 50%;
+}
+
+/* Four ticks around a gap - the Call of Duty hitmarker, near enough. */
+.quickscope__hitmarker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  translate: var(--x) var(--y);
+  animation: quickscope-hit 540ms cubic-bezier(0.2, 0.9, 0.3, 1) var(--delay) both;
+}
+
+.quickscope__hitmarker::before,
+.quickscope__hitmarker::after {
+  content: '';
+  position: absolute;
+  top: 46%;
+  right: 0;
+  left: 0;
+  height: 8%;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    #f8fafc 0 33%,
+    transparent 33% 67%,
+    #f8fafc 67% 100%
+  );
+  filter: drop-shadow(0 0 6px rgba(2, 8, 23, 0.9));
+}
+
+.quickscope__hitmarker::before {
+  transform: rotate(45deg);
+}
+
+.quickscope__hitmarker::after {
+  transform: rotate(-45deg);
+}
+
+@keyframes quickscope-hit {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  55% {
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+/* Comic Sans is not a joke here, it is the period-correct typeface. */
+.quickscope__shout {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: calc(-50% + var(--x)) calc(-50% + var(--y));
+  rotate: var(--tilt, 0deg);
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 4.6vmin, 2.9rem);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  background: linear-gradient(90deg, #f87171, #fbbf24, #4ade80, #38bdf8, #c084fc, #f87171);
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 0 rgba(2, 8, 23, 0.95)) drop-shadow(0 0 14px rgba(2, 8, 23, 0.9));
+  animation:
+    quickscope-shout 1500ms cubic-bezier(0.2, 1.5, 0.4, 1) var(--delay) both,
+    quickscope-rainbow 900ms linear var(--delay) infinite;
+}
+
+.quickscope__points {
+  --x: 0vmin;
+  --y: -40vmin;
+  --tilt: 0deg;
+  --delay: 520ms;
+  font-size: clamp(2rem, 8vmin, 4.5rem);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes quickscope-shout {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  40% {
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes quickscope-rainbow {
+  to {
+    background-position: 300% 0;
+  }
+}
+
+.quickscope__confetti {
+  position: absolute;
+  top: -14vmin;
+  left: var(--left);
+  font-size: calc(var(--scale) * 2.1rem);
+  line-height: 1;
+  animation: quickscope-fall var(--duration) linear var(--delay) both;
+}
+
+@keyframes quickscope-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.9;
+    transform: translate3d(var(--drift), 125vh, 0) rotate(var(--spin));
   }
 }
