@@ -36,7 +36,10 @@
 
 .game-header {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  /* Four children: brand, score, case, clue progress. Three columns here
+     used to push the progress block onto a second row under the score. The
+     narrow-screen rules below reflow it on purpose; this one should not. */
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
   gap: 16px;
   padding-bottom: 18px;
