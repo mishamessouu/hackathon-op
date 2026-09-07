@@ -17,22 +17,27 @@ MAX_RETRIES = 3
 SECRET_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
+# Both spellings are in use across the repo.
+API_KEY_NAMES = ("APOGEOAPI_KEY", "APOGEO_API_KEY")
+
+
 def get_api_key():
     """Read the API key from the environment or the repository secret file."""
-    api_key = os.environ.get("APOGEOAPI_KEY")
-    if api_key:
-        return api_key
+    for name in API_KEY_NAMES:
+        api_key = os.environ.get(name)
+        if api_key:
+            return api_key
 
     if SECRET_FILE.exists():
         for line in SECRET_FILE.read_text(encoding="utf-8").splitlines():
             key, separator, value = line.partition("=")
-            if separator and key.strip() == "APOGEOAPI_KEY":
+            if separator and key.strip().replace("export ", "").strip() in API_KEY_NAMES:
                 api_key = value.strip().strip('"').strip("'")
                 if api_key:
                     return api_key
 
     raise RuntimeError(
-        f"Set APOGEOAPI_KEY or add it to {SECRET_FILE.name} in the repository root"
+        f"Set {API_KEY_NAMES[0]} or add it to {SECRET_FILE.name} in the repository root"
     )
 
 
@@ -41,7 +46,7 @@ def get_page(session, page):
     for attempt in range(MAX_RETRIES + 1):
         response = session.get(
             API_URL,
-            params={"page": page, "limit": PAGE_SIZE, "fields": "basic"},
+            params={"page": page, "limit": PAGE_SIZE, "fields": "full"},
             timeout=30,
         )
 
@@ -81,10 +86,19 @@ def export_countries(output_path):
     countries.sort(key=lambda country: country.get("name", ""))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=["name", "iso2"])
+        writer = csv.DictWriter(
+            csv_file,
+            fieldnames=["name", "iso2", "numeric_code", "latitude", "longitude"],
+        )
         writer.writeheader()
         writer.writerows(
-            {"name": country.get("name", ""), "iso2": country.get("iso2", "")}
+            {
+                "name": country.get("name", ""),
+                "iso2": country.get("iso2", ""),
+                "numeric_code": country.get("numericCode", ""),
+                "latitude": country.get("latitude", ""),
+                "longitude": country.get("longitude", ""),
+            }
             for country in countries
         )
 
