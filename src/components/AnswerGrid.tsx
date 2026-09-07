@@ -6,12 +6,13 @@ import type { Option } from '../types/game'
 type AnswerGridProps = {
   options: Option[]
   onAnswer: (option: Option) => void
+  onSkip: () => void
   disabled: boolean
 }
 
 const MAX_SUGGESTIONS = 8
 
-export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
+export function AnswerGrid({ options, onAnswer, onSkip, disabled }: AnswerGridProps) {
   const [inputValue, setInputValue] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const inputId = useId()
@@ -72,9 +73,21 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
         autoHighlight
         disabled={disabled}
       >
-        <label className="answer-input-label" htmlFor={inputId}>
-          Type a country
-        </label>
+        <div className="answer-input-header">
+          <label className="answer-input-label" htmlFor={inputId}>
+            Type a country
+          </label>
+          {/* For when you have no clue. Costs the same rung as a wrong guess, so
+              it is never the better option - only the honest one. */}
+          <button
+            type="button"
+            className="secondary-button answer-skip"
+            onClick={onSkip}
+            disabled={disabled}
+          >
+            Skip clue
+          </button>
+        </div>
 
         <div className="answer-input-row">
           <Combobox.Input

@@ -247,7 +247,28 @@ def guess() -> Tuple[Any, int]:
             }
         ), 200
 
-    comparison = _comparison(state, answer)
+    return _miss(state, run, _comparison(state, answer), "Not quite. The investigation continues…")
+
+
+@app.post("/api/game/skip")
+def skip() -> Tuple[Any, int]:
+    """Pass on the clue without guessing.
+
+    Costs the same rung as a wrong guess. A wrong guess at least tells you how
+    your country compares, so skipping is only ever the lazier option, never
+    the better one - which is what keeps it from being an exploit.
+    """
+    payload = request.get_json(silent=True) or {}
+    state = session.decode(payload.get("gameId"), session.KIND_ROUND)
+    if state is None:
+        return jsonify({"error": "This case file has expired. Start a new investigation."}), 400
+    run = _load_run(payload.get("runId"))
+    return _miss(state, run, None, "Skipped. On to the next clue.")
+
+
+def _miss(state: dict, run: dict, comparison: Optional[dict], message: str) -> Tuple[Any, int]:
+    """Move the round on after a clue went unanswered - wrong guess or skip."""
+    hint_index = state["hint_index"]
 
     if hint_index + 1 >= TOTAL_CLUES:
         return jsonify(
@@ -268,7 +289,7 @@ def guess() -> Tuple[Any, int]:
             "correct": False,
             "score": 0,
             "gameOver": False,
-            "message": "Not quite. The investigation continues…",
+            "message": message,
             "nextQuestion": _question(state),
             "comparison": comparison,
             **_run_payload(run),

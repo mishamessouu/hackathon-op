@@ -360,6 +360,22 @@
   color: #9aa5b1;
 }
 
+.answer-input-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Same width as Submit and directly over it, so the two read as the pair they
+   are: commit to a guess, or pass on the clue. */
+.answer-skip {
+  min-width: 140px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .answer-input-row {
   display: flex;
   gap: 12px;
