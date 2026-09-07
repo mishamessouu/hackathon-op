@@ -25,10 +25,9 @@ export function StartScreen({ onStart, isStarting, error }: StartScreenProps) {
       <div className="start-screen__badge">
         <span aria-hidden="true">🕵️</span> API DETECTIVE
       </div>
-      <h1>Six clues. One country. Name it before the trail goes cold.</h1>
+      <h1>Figure out which country is hiding behind the clues</h1>
       <p className="start-screen__subtitle">
-        You get a timezone, a phone code, a population — and steadily more obvious hints
-        until the flag gives it away. The sooner you call it, the more it is worth.
+
       </p>
 
       <ol className="start-steps">
@@ -45,8 +44,13 @@ export function StartScreen({ onStart, isStarting, error }: StartScreenProps) {
         ))}
       </ol>
 
-      <button type="button" className="primary-button" onClick={onStart} disabled={isStarting}>
-        {isStarting ? 'Loading case file...' : 'Start Investigation'}
+      <button
+        type="button"
+        className="primary-button start-button"
+        onClick={onStart}
+        disabled={isStarting}
+      >
+        {isStarting ? 'Loading case file...' : 'Start the game'}
       </button>
       {error ? (
         <p className="answer-input-error" role="alert">
