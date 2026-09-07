@@ -27,7 +27,7 @@ export function StartScreen({ onStart, isStarting, error }: StartScreenProps) {
       </div>
       <h1>Six clues. One country. Name it before the trail goes cold.</h1>
       <p className="start-screen__subtitle">
-        You get a population, a timezone, an exchange rate — and steadily more obvious hints
+        You get a timezone, a phone code, a population — and steadily more obvious hints
         until the flag gives it away. The sooner you call it, the more it is worth.
       </p>
 
