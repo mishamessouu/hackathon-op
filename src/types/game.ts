@@ -2,6 +2,20 @@ export type Option = {
   id: string
   label: string
   flag?: string
+  /** ISO 3166-1 numeric — how world-atlas keys its country polygons. */
+  numericCode: string
+  lat: number | null
+  lng: number | null
+}
+
+/** A country the player has committed to this round. */
+export type Guess = {
+  iso2: string
+  label: string
+  numericCode: string
+  lat: number | null
+  lng: number | null
+  correct: boolean
 }
 
 export type Clue = {
@@ -21,7 +35,11 @@ export type GameQuestion = {
 
 export type RevealedCountry = {
   name: string
+  iso2: string
   flag: string
+  numericCode: string
+  lat: number | null
+  lng: number | null
 }
 
 export type AnswerResponse = {

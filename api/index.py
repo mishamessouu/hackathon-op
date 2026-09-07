@@ -56,9 +56,15 @@ def _question(state: dict) -> dict:
 
 
 def _reveal(state: dict) -> dict:
+    iso2 = state["iso2"]
+    entry = next((c for c in _dropdown_countries() if c.iso2 == iso2), None)
     return {
         "name": state["country"],
-        "flag": state["facts"].get("flag") or flag_emoji(state["iso2"]),
+        "iso2": iso2,
+        "flag": state["facts"].get("flag") or flag_emoji(iso2),
+        "numericCode": entry.numeric_code if entry else "",
+        "lat": entry.latitude if entry else None,
+        "lng": entry.longitude if entry else None,
     }
 
 
@@ -83,6 +89,11 @@ def countries() -> Tuple[Any, int]:
                     "id": country.iso2 or country.name,
                     "label": country.name,
                     "flag": flag_emoji(country.iso2),
+                    # Everything the globe needs to place a guess: the polygon
+                    # key, plus a position for countries with no polygon.
+                    "numericCode": country.numeric_code,
+                    "lat": country.latitude,
+                    "lng": country.longitude,
                 }
                 for country in _dropdown_countries()
             ]

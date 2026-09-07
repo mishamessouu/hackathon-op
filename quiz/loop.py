@@ -47,6 +47,18 @@ DEFAULT_COUNTRIES_FILE = Path(
 class Country:
     name: str
     iso2: str
+    # ISO 3166-1 numeric, which is how world-atlas keys its country polygons.
+    numeric_code: str = ""
+    # Fallback position for countries with no polygon at this resolution.
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+def _to_float(value) -> Optional[float]:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def load_countries(countries_file=None) -> List[Country]:
@@ -74,7 +86,15 @@ def load_countries(countries_file=None) -> List[Country]:
             if not name:
                 continue
             iso2 = (row.get(iso_column) or "").strip().upper() if iso_column else ""
-            countries.append(Country(name=name, iso2=iso2))
+            countries.append(
+                Country(
+                    name=name,
+                    iso2=iso2,
+                    numeric_code=(row.get("numeric_code") or "").strip(),
+                    latitude=_to_float(row.get("latitude")),
+                    longitude=_to_float(row.get("longitude")),
+                )
+            )
         return countries
 
 

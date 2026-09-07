@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { fetchCountries, startGame, submitAnswer } from './api/game'
 import { AnswerGrid } from './components/AnswerGrid'
@@ -7,8 +7,12 @@ import { ClueCard } from './components/ClueCard'
 import { GameHeader } from './components/GameHeader'
 import { ProgressIndicator } from './components/ProgressIndicator'
 import { StartScreen } from './components/StartScreen'
+import { GlobeBoundary } from './components/GlobeBoundary'
 import { WrongAnswer } from './components/WrongAnswer'
-import type { GameQuestion, GameState, Option, RevealedCountry } from './types/game'
+import type { Guess, GameQuestion, GameState, Option, RevealedCountry } from './types/game'
+
+// three.js is heavy, so it must not block the first paint.
+const GuessGlobe = lazy(() => import('./components/GuessGlobe'))
 
 function App() {
   const [gameState, setGameState] = useState<GameState>('start')
@@ -19,6 +23,7 @@ function App() {
   const [roundScore, setRoundScore] = useState(0)
   const [wrongMessage, setWrongMessage] = useState('')
   const [revealed, setRevealed] = useState<RevealedCountry | null>(null)
+  const [guesses, setGuesses] = useState<Guess[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -43,6 +48,7 @@ function App() {
       const nextQuestion = await startGame()
       setQuestion(nextQuestion)
       setRoundScore(0)
+      setGuesses([])
       setWrongMessage('')
       setRevealed(null)
       setGameState('playing')
@@ -53,7 +59,7 @@ function App() {
     }
   }
 
-  async function handleAnswer(answer: string) {
+  async function handleAnswer(option: Option) {
     if (!question || isSubmitting) {
       return
     }
@@ -62,7 +68,19 @@ function App() {
     setErrorMessage('')
 
     try {
-      const result = await submitAnswer(question.gameId, answer)
+      const result = await submitAnswer(question.gameId, option.label)
+
+      setGuesses((previous) => [
+        ...previous,
+        {
+          iso2: option.id,
+          label: option.label,
+          numericCode: option.numericCode,
+          lat: option.lat,
+          lng: option.lng,
+          correct: result.correct,
+        },
+      ])
 
       if (result.correct) {
         setRoundScore(result.score)
@@ -114,11 +132,67 @@ function App() {
               {gameState === 'wrong' && <WrongAnswer message={wrongMessage} />}
 
               {isGuessing && (
+                <div className={gameState === 'wrong' ? 'clue-header spacing-top' : 'clue-header'}>
+                  <span className="clue-badge">CASE FILE</span>
+                </div>
+              )}
+
+              {/* One globe for the whole round: remounting it would restart
+                  three.js and throw away the camera on every state change. */}
+              <div className="game-stage">
+                <div className="game-stage__main">
+                  {isGuessing && <ClueCard clue={question.clue} />}
+
+                  {gameState === 'solved' && (
+                    <CaseSolved
+                      score={score}
+                      roundScore={roundScore}
+                      cluesUsed={question.clueNumber}
+                      onNewInvestigation={handleStart}
+                      countryName={revealed?.name ?? 'Country'}
+                      countryFlag={revealed?.flag ?? '🌍'}
+                      error={errorMessage}
+                    />
+                  )}
+
+                  {gameState === 'lost' && (
+                    <section className="wrong-answer" aria-live="polite">
+                      <div className="case-solved__flag" aria-hidden="true">
+                        {revealed?.flag ?? '🌍'}
+                      </div>
+                      <h2>The trail goes cold.</h2>
+                      <p>It was {revealed?.name ?? 'somewhere else'}.</p>
+                      <button type="button" className="primary-button" onClick={handleStart}>
+                        New Investigation
+                      </button>
+                      {errorMessage ? (
+                        <p className="answer-input-error" role="alert">
+                          {errorMessage}
+                        </p>
+                      ) : null}
+                    </section>
+                  )}
+                </div>
+
+                <GlobeBoundary
+                  fallback={
+                    <div className="guess-globe guess-globe--fallback">
+                      <p>Globe unavailable in this browser.</p>
+                    </div>
+                  }
+                >
+                  <Suspense fallback={<div className="guess-globe guess-globe--loading" />}>
+                    <GuessGlobe
+                      guesses={guesses}
+                      revealed={revealed}
+                      solved={gameState === 'solved'}
+                    />
+                  </Suspense>
+                </GlobeBoundary>
+              </div>
+
+              {isGuessing && (
                 <>
-                  <div className={gameState === 'wrong' ? 'clue-header spacing-top' : 'clue-header'}>
-                    <span className="clue-badge">CASE FILE</span>
-                  </div>
-                  <ClueCard clue={question.clue} />
                   <div className="question-title">WHERE ARE WE?</div>
 
                   {hasCountries ? (
@@ -151,35 +225,6 @@ function App() {
                 </>
               )}
 
-              {gameState === 'lost' && (
-                <section className="wrong-answer" aria-live="polite">
-                  <div className="case-solved__flag" aria-hidden="true">
-                    {revealed?.flag ?? '🌍'}
-                  </div>
-                  <h2>The trail goes cold.</h2>
-                  <p>It was {revealed?.name ?? 'somewhere else'}.</p>
-                  <button type="button" className="primary-button" onClick={handleStart}>
-                    New Investigation
-                  </button>
-                  {errorMessage ? (
-                    <p className="answer-input-error" role="alert">
-                      {errorMessage}
-                    </p>
-                  ) : null}
-                </section>
-              )}
-
-              {gameState === 'solved' && (
-                <CaseSolved
-                  score={score}
-                  roundScore={roundScore}
-                  cluesUsed={question.clueNumber}
-                  onNewInvestigation={handleStart}
-                  countryName={revealed?.name ?? 'Country'}
-                  countryFlag={revealed?.flag ?? '🌍'}
-                  error={errorMessage}
-                />
-              )}
             </>
           ) : null}
         </main>

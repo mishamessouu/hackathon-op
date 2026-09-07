@@ -4,7 +4,7 @@ import type { Option } from '../types/game'
 
 type AnswerGridProps = {
   options: Option[]
-  onAnswer: (countryName: string) => void
+  onAnswer: (option: Option) => void
   disabled: boolean
 }
 
@@ -21,10 +21,10 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
     ? options.filter((option) => option.label.toLowerCase().includes(query)).slice(0, MAX_SUGGESTIONS)
     : []
 
-  function guess(countryName: string) {
+  function guess(option: Option) {
     setInputValue('')
     setErrorMessage('')
-    onAnswer(countryName)
+    onAnswer(option)
   }
 
   function submitTyped() {
@@ -35,7 +35,7 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
       setErrorMessage('Pick a country from the list.')
       return
     }
-    guess(exact.label)
+    guess(exact)
   }
 
   return (
@@ -53,7 +53,7 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
         }}
         onValueChange={(option: Option | null) => {
           if (option) {
-            guess(option.label)
+            guess(option)
           }
         }}
         itemToStringLabel={(option: Option) => option.label}
