@@ -11,18 +11,17 @@ game loop stays playable.
 from __future__ import annotations
 
 import logging
-import os
 import re
 import time
-from pathlib import Path
 from typing import List, Optional
 
 import requests
 
+from quiz import env
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_API_URL = "https://api.apogeoapi.com/v1/countries"
-SECRET_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 # Both spellings are in use: scripts/export_countries.py reads the first,
 # .env.example has historically shown the second.
@@ -63,19 +62,7 @@ _cached_at = 0.0
 
 def get_api_key() -> Optional[str]:
     """Read the Apogeo key from the environment, falling back to the .env file."""
-    for name in API_KEY_NAMES:
-        api_key = os.environ.get(name)
-        if api_key:
-            return api_key
-
-    if SECRET_FILE.exists():
-        for line in SECRET_FILE.read_text(encoding="utf-8").splitlines():
-            key, separator, value = line.partition("=")
-            if separator and key.strip().replace("export ", "").strip() in API_KEY_NAMES:
-                candidate = value.strip().strip('"').strip("'")
-                if candidate:
-                    return candidate
-    return None
+    return env.setting(*API_KEY_NAMES)
 
 
 # A hyphen-minus is easy to misread as a plus at small sizes, and a UTC offset
@@ -203,7 +190,7 @@ def _fetch_all_records() -> Optional[List[dict]]:
     if not api_key:
         return None
 
-    base = (os.getenv("APOGEO_API_URL", DEFAULT_API_URL)).rstrip("/")
+    base = (env.setting("APOGEO_API_URL") or DEFAULT_API_URL).rstrip("/")
     try:
         response = requests.get(
             base,

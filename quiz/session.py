@@ -16,6 +16,8 @@ from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 
+from quiz import env
+
 logger = logging.getLogger(__name__)
 
 # A round left open for longer than this has been abandoned.
@@ -32,9 +34,19 @@ def _derive_key(secret: str) -> bytes:
 def _get_fernet() -> Fernet:
     global _fernet
     if _fernet is None:
-        secret = os.environ.get("GAME_SECRET")
+        secret = env.setting("GAME_SECRET")
         if secret:
             _fernet = Fernet(_derive_key(secret))
+        elif os.environ.get("VERCEL"):
+            # An ephemeral key is a survivable annoyance locally and a total
+            # outage on serverless: each instance derives a different key, so a
+            # round started on one is undecodable on the next and every player
+            # is told their case file expired. Refuse to boot instead.
+            raise RuntimeError(
+                "GAME_SECRET is required on Vercel. Without it every instance "
+                "generates its own key and no round survives a second request. "
+                "Set it in the project's environment variables."
+            )
         else:
             logger.warning(
                 "GAME_SECRET is not set - generating an ephemeral key. Rounds will "
