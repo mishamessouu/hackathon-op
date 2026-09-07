@@ -12,17 +12,25 @@ export type Clue = {
 
 export type GameQuestion = {
   gameId: string
+  caseNumber: string
   score: number
   clue: Clue
-  answer: string
+  clueNumber: number
+  totalClues: number
+}
+
+export type RevealedCountry = {
+  name: string
+  flag: string
 }
 
 export type AnswerResponse = {
   correct: boolean
   score: number
   gameOver: boolean
-  nextQuestion?: GameQuestion
   message?: string
+  nextQuestion?: GameQuestion
+  country?: RevealedCountry
 }
 
-export type GameState = 'start' | 'playing' | 'wrong' | 'solved'
+export type GameState = 'start' | 'playing' | 'wrong' | 'solved' | 'lost'
