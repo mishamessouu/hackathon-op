@@ -109,10 +109,15 @@ export default function GuessGlobe({ guesses, revealed, solved }: GuessGlobeProp
 
   useEffect(() => {
     const controls = globeRef.current?.controls()
-    if (controls) {
-      controls.autoRotate = false
-      controls.enableZoom = false
+    if (!controls) {
+      return
     }
+    controls.autoRotate = false
+    controls.enableZoom = false
+    // On touch, a one-finger drag over the canvas would rotate the globe
+    // instead of scrolling the page, trapping the answer field below it. The
+    // camera still flies to each guess, which is the part that carries meaning.
+    controls.enableRotate = !window.matchMedia?.('(pointer: coarse)').matches
   }, [size])
 
   return (
