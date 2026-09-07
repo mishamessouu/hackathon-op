@@ -14,12 +14,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-# Hardest clue first, easiest last. The flag is the giveaway freebie.
+# Hardest first, easiest last - measured by what a person can actually reason
+# from, not by how much the field narrows the field mathematically. A phone
+# code identifies a country almost uniquely but hardly anyone can use one, so
+# it made the two highest-scoring clues unwinnable; the exchange rate hints at
+# an economy instead, which is something a player can think about.
 HINT_CATEGORIES = (
-    "timezone",
-    "phone_code",
     "population",
-    "currency_shorthand",
+    "timezone",
+    "exchange_rate",
+    "region_currency",
     "capital",
     "flag",
 )
@@ -30,10 +34,10 @@ TOTAL_CLUES = len(HINT_CATEGORIES)
 POINTS_PER_REMAINING_CLUE = 250
 
 CATEGORY_LABELS = {
-    "timezone": "🕐 Timezone",
-    "phone_code": "📞 Phone code",
     "population": "👥 Population",
-    "currency_shorthand": "💰 Currency",
+    "timezone": "🕐 Timezone",
+    "exchange_rate": "💱 Exchange rate",
+    "region_currency": "🗺️ Region & currency",
     "capital": "🏙️ Capital",
     "flag": "🏳️ Flag",
 }

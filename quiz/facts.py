@@ -28,23 +28,33 @@ SECRET_FILE = Path(__file__).resolve().parents[1] / ".env"
 # .env.example has historically shown the second.
 API_KEY_NAMES = ("APOGEOAPI_KEY", "APOGEO_API_KEY")
 
+# Countries whose capital does not name any of their zones. Without these the
+# United States reports Hawaii and French Polynesia reports the Gambiers.
+TIMEZONE_OVERRIDES = {
+    "US": "America/New_York",
+    "AU": "Australia/Sydney",
+    "NZ": "Pacific/Auckland",
+    "PF": "Pacific/Tahiti",
+    "FM": "Pacific/Pohnpei",
+}
+
 CACHE_TTL_SECONDS = 60 * 60
 REQUEST_TIMEOUT_SECONDS = 30
 
 # Enough countries to play a real round without an API key.
 OFFLINE_FACTS = {
-    "Sweden": {"timezone": "UTC+01:00", "phone_code": "+46", "population": "About 11 million people", "currency_shorthand": "SEK", "capital": "Stockholm"},
-    "Japan": {"timezone": "UTC+09:00", "phone_code": "+81", "population": "About 123 million people", "currency_shorthand": "JPY", "capital": "Tokyo"},
-    "Brazil": {"timezone": "UTC-03:00", "phone_code": "+55", "population": "About 216 million people", "currency_shorthand": "BRL", "capital": "Brasilia"},
-    "Kenya": {"timezone": "UTC+03:00", "phone_code": "+254", "population": "About 55 million people", "currency_shorthand": "KES", "capital": "Nairobi"},
-    "Portugal": {"timezone": "UTC+00:00", "phone_code": "+351", "population": "About 10 million people", "currency_shorthand": "EUR", "capital": "Lisbon"},
-    "Vietnam": {"timezone": "UTC+07:00", "phone_code": "+84", "population": "About 99 million people", "currency_shorthand": "VND", "capital": "Hanoi"},
-    "Mexico": {"timezone": "UTC-06:00", "phone_code": "+52", "population": "About 128 million people", "currency_shorthand": "MXN", "capital": "Mexico City"},
-    "Norway": {"timezone": "UTC+01:00", "phone_code": "+47", "population": "About 5 million people", "currency_shorthand": "NOK", "capital": "Oslo"},
-    "Egypt": {"timezone": "UTC+02:00", "phone_code": "+20", "population": "About 113 million people", "currency_shorthand": "EGP", "capital": "Cairo"},
-    "New Zealand": {"timezone": "UTC+12:00", "phone_code": "+64", "population": "About 5 million people", "currency_shorthand": "NZD", "capital": "Wellington"},
-    "Argentina": {"timezone": "UTC-03:00", "phone_code": "+54", "population": "About 46 million people", "currency_shorthand": "ARS", "capital": "Buenos Aires"},
-    "Iceland": {"timezone": "UTC+00:00", "phone_code": "+354", "population": "About 375,000 people", "currency_shorthand": "ISK", "capital": "Reykjavik"},
+    "Sweden": {"population": "About 11 million people", "timezone": "UTC+01:00", "exchange_rate": "1 USD = 9.57 of the local currency", "region_currency": "Northern Europe, the Swedish krona", "capital": "Stockholm"},
+    "Japan": {"population": "About 123 million people", "timezone": "UTC+09:00", "exchange_rate": "1 USD = 156 of the local currency", "region_currency": "Eastern Asia, the Japanese yen", "capital": "Tokyo"},
+    "Brazil": {"population": "About 216 million people", "timezone": "UTC−03:00", "exchange_rate": "1 USD = 5.32 of the local currency", "region_currency": "South America, the Brazilian real", "capital": "Brasilia"},
+    "Kenya": {"population": "About 55 million people", "timezone": "UTC+03:00", "exchange_rate": "1 USD = 129 of the local currency", "region_currency": "Eastern Africa, the Kenyan shilling", "capital": "Nairobi"},
+    "Portugal": {"population": "About 10 million people", "timezone": "UTC+00:00", "exchange_rate": "1 USD = 0.92 of the local currency", "region_currency": "Southern Europe, the euro", "capital": "Lisbon"},
+    "Vietnam": {"population": "About 99 million people", "timezone": "UTC+07:00", "exchange_rate": "1 USD = 26,002 of the local currency", "region_currency": "South-Eastern Asia, the Vietnamese đồng", "capital": "Hanoi"},
+    "Mexico": {"population": "About 128 million people", "timezone": "UTC−06:00", "exchange_rate": "1 USD = 18 of the local currency", "region_currency": "Central America, the Mexican peso", "capital": "Mexico City"},
+    "Norway": {"population": "About 5 million people", "timezone": "UTC+01:00", "exchange_rate": "1 USD = 10.62 of the local currency", "region_currency": "Northern Europe, the Norwegian krone", "capital": "Oslo"},
+    "Egypt": {"population": "About 113 million people", "timezone": "UTC+02:00", "exchange_rate": "1 USD = 48 of the local currency", "region_currency": "Northern Africa, the Egyptian pound", "capital": "Cairo"},
+    "New Zealand": {"population": "About 5 million people", "timezone": "UTC+13:00", "exchange_rate": "1 USD = 1.68 of the local currency", "region_currency": "Australia and New Zealand, the New Zealand dollar", "capital": "Wellington"},
+    "Argentina": {"population": "About 46 million people", "timezone": "UTC−03:00", "exchange_rate": "1 USD = 1,507 of the local currency", "region_currency": "South America, the Argentine peso", "capital": "Buenos Aires"},
+    "Iceland": {"population": "About 375,000 people", "timezone": "UTC+00:00", "exchange_rate": "1 USD = 124 of the local currency", "region_currency": "Northern Europe, the Icelandic króna", "capital": "Reykjavik"},
 }
 
 _cache: Optional[List[dict]] = None
@@ -101,6 +111,12 @@ def _pick_timezone(record: dict) -> Optional[dict]:
     if not zones:
         return None
 
+    override = TIMEZONE_OVERRIDES.get((record.get("iso2") or "").upper())
+    if override:
+        for zone in zones:
+            if zone.get("zoneName") == override:
+                return zone
+
     def simplify(value):
         return re.sub(r"[^a-z]", "", (value or "").lower())
 
@@ -139,9 +155,23 @@ def facts_from_record(record: dict) -> dict:
     if population:
         facts["population"] = population
 
-    currency = record.get("currency")
-    if currency:
-        facts["currency_shorthand"] = str(currency).strip()
+    # Names the economy without naming the currency, so it hints rather than tells.
+    rate = (record.get("currencyRate") or {}).get("rate")
+    if rate:
+        try:
+            amount = float(rate)
+        except (TypeError, ValueError):
+            amount = None
+        if amount:
+            shown = "{:,.0f}".format(amount) if amount >= 100 else "{:,.2f}".format(amount)
+            facts["exchange_rate"] = "1 USD = {} of the local currency".format(shown)
+
+    subregion = record.get("subregion")
+    currency_name = record.get("currencyName")
+    if subregion and currency_name:
+        facts["region_currency"] = "{}, the {}".format(
+            str(subregion).strip(), str(currency_name).strip()
+        )
 
     capital = record.get("capital")
     if capital:
@@ -158,7 +188,13 @@ def is_playable(facts: dict) -> bool:
     """Every clue in the ladder must have a real value."""
     return all(
         facts.get(category)
-        for category in ("timezone", "phone_code", "population", "currency_shorthand", "capital")
+        for category in (
+            "population",
+            "timezone",
+            "exchange_rate",
+            "region_currency",
+            "capital",
+        )
     )
 
 

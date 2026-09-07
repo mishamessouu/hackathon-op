@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Combobox } from '@base-ui/react/combobox'
+import { ALIAS_LOOKUP } from '../countryAliases'
 import type { Option } from '../types/game'
 
 type AnswerGridProps = {
@@ -18,7 +19,18 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
   // Filtering is ours so the list stays capped and never renders 250 nodes.
   const query = inputValue.trim().toLowerCase()
   const matches = query
-    ? options.filter((option) => option.label.toLowerCase().includes(query)).slice(0, MAX_SUGGESTIONS)
+    ? options
+        .filter((option) => {
+          const label = option.label.toLowerCase()
+          if (label.includes(query)) {
+            return true
+          }
+          // "usa", "england" and "czechia" match nothing official.
+          return Object.entries(ALIAS_LOOKUP).some(
+            ([alias, target]) => target === option.label && alias.includes(query),
+          )
+        })
+        .slice(0, MAX_SUGGESTIONS)
     : []
 
   function guess(option: Option) {
