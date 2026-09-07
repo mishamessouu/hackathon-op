@@ -3,28 +3,26 @@
   line-height: 1.5;
   font-weight: 400;
   color: #e2e8f0;
-  background:
-    radial-gradient(circle at top, rgba(15, 118, 110, 0.22), transparent 30%),
-    #020817;
+  background: #020817;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color-scheme: dark;
+
+  /* Fixed z-index scale. Nothing should introduce a one-off value. */
+  --z-base: 1;
+  --z-dropdown: 10;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #020817;
 }
 
@@ -39,12 +37,33 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+:focus-visible {
+  outline: 2px solid #2dd4bf;
+  outline-offset: 2px;
+}
+
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 h1,
 h2,
 p {
   margin-top: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

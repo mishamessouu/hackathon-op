@@ -8,7 +8,9 @@ export function GameHeader({ caseNumber, score, clueNumber }: GameHeaderProps) {
   return (
     <header className="game-header">
       <div className="brand-group">
-        <span className="brand-mark">🕵️</span>
+        <span className="brand-mark" aria-hidden="true">
+          🕵️
+        </span>
         <div>
           <p className="eyebrow">API DETECTIVE</p>
         </div>

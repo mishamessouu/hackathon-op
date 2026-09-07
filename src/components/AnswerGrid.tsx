@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { Option } from '../types/game'
 
 type AnswerGridProps = {
@@ -13,20 +13,21 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
   const [inputValue, setInputValue] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const allCountries = options
+  const listboxId = useId()
 
   const query = inputValue.trim().toLowerCase()
   const visibleOptions = (
-    query
-      ? allCountries.filter((option) => option.label.toLowerCase().includes(query))
-      : allCountries
+    query ? options.filter((option) => option.label.toLowerCase().includes(query)) : options
   ).slice(0, MAX_SUGGESTIONS)
 
-  function handleSubmit() {
-    const trimmedValue = inputValue.trim()
-    const selected = allCountries.find(
-      (option) => option.label.toLowerCase() === trimmedValue.toLowerCase(),
+  const isListOpen = isOpen && visibleOptions.length > 0
+  const activeOption = activeIndex >= 0 ? visibleOptions[activeIndex] : undefined
+
+  function submit(value: string) {
+    const selected = options.find(
+      (option) => option.label.toLowerCase() === value.trim().toLowerCase(),
     )
 
     if (!selected) {
@@ -35,6 +36,8 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
     }
 
     setErrorMessage('')
+    setIsOpen(false)
+    setActiveIndex(-1)
     onAnswer(selected.label)
   }
 
@@ -42,7 +45,39 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
     setInputValue(option.label)
     setErrorMessage('')
     setIsOpen(false)
+    setActiveIndex(-1)
     inputRef.current?.focus()
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (!isListOpen) {
+        setIsOpen(true)
+        setActiveIndex(0)
+        return
+      }
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      const next = (activeIndex + step + visibleOptions.length) % visibleOptions.length
+      setActiveIndex(activeIndex === -1 && step === -1 ? visibleOptions.length - 1 : next)
+      return
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      if (activeOption) {
+        handleSelect(activeOption)
+      } else {
+        submit(inputValue)
+      }
+      return
+    }
+
+    if (event.key === 'Escape' && isListOpen) {
+      event.preventDefault()
+      setIsOpen(false)
+      setActiveIndex(-1)
+    }
   }
 
   return (
@@ -59,39 +94,57 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
             type="text"
             placeholder="Start typing a country..."
             value={inputValue}
+            role="combobox"
+            aria-expanded={isListOpen}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            aria-activedescendant={activeOption ? `${listboxId}-${activeIndex}` : undefined}
+            aria-describedby={errorMessage ? 'country-answer-error' : undefined}
+            aria-invalid={errorMessage ? true : undefined}
+            autoComplete="off"
             onFocus={() => setIsOpen(true)}
             onChange={(event) => {
               setInputValue(event.target.value)
+              setIsOpen(true)
+              setActiveIndex(-1)
               if (errorMessage) {
                 setErrorMessage('')
               }
             }}
-            onBlur={() => {
-              window.setTimeout(() => setIsOpen(false), 120)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                handleSubmit()
+            onBlur={(event) => {
+              // Closing only when focus actually leaves the widget avoids the
+              // race a timeout-based close introduces.
+              if (!event.currentTarget.parentElement?.contains(event.relatedTarget)) {
+                setIsOpen(false)
+                setActiveIndex(-1)
               }
             }}
+            onKeyDown={handleKeyDown}
             disabled={disabled}
-            aria-label="Country answer input"
           />
 
-          {isOpen ? (
-            <div className="answer-dropdown" role="listbox" aria-label="Available countries">
-              {visibleOptions.map((option) => (
+          {isListOpen ? (
+            <div className="answer-dropdown" role="listbox" id={listboxId} aria-label="Countries">
+              {visibleOptions.map((option, index) => (
                 <button
                   key={option.id}
+                  id={`${listboxId}-${index}`}
                   type="button"
+                  role="option"
+                  aria-selected={index === activeIndex}
+                  data-active={index === activeIndex}
                   className="answer-dropdown__item"
+                  tabIndex={-1}
                   onMouseDown={(event) => {
                     event.preventDefault()
                     handleSelect(option)
                   }}
                 >
-                  {option.flag ? <span className="answer-dropdown__flag">{option.flag}</span> : null}
+                  {option.flag ? (
+                    <span className="answer-dropdown__flag" aria-hidden="true">
+                      {option.flag}
+                    </span>
+                  ) : null}
                   <span>{option.label}</span>
                 </button>
               ))}
@@ -99,12 +152,21 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
           ) : null}
         </div>
 
-        <button type="button" className="primary-button answer-submit" onClick={handleSubmit} disabled={disabled}>
+        <button
+          type="button"
+          className="primary-button answer-submit"
+          onClick={() => submit(inputValue)}
+          disabled={disabled}
+        >
           Submit
         </button>
       </div>
 
-      {errorMessage ? <p className="answer-input-error">{errorMessage}</p> : null}
+      {errorMessage ? (
+        <p className="answer-input-error" id="country-answer-error" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </div>
   )
 }

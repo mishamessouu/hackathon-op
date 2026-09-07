@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { fetchCountries, startGame, submitAnswer } from './api/game'
 import { AnswerGrid } from './components/AnswerGrid'
@@ -14,6 +14,7 @@ function App() {
   const [gameState, setGameState] = useState<GameState>('start')
   const [question, setQuestion] = useState<GameQuestion | null>(null)
   const [countryOptions, setCountryOptions] = useState<Option[]>([])
+  const [countriesError, setCountriesError] = useState('')
   const [score, setScore] = useState(0)
   const [wrongMessage, setWrongMessage] = useState('')
   const [revealed, setRevealed] = useState<RevealedCountry | null>(null)
@@ -22,11 +23,16 @@ function App() {
   const [errorMessage, setErrorMessage] = useState('')
 
   // The dropdown list comes from countries.csv via the API.
-  useEffect(() => {
+  const loadCountries = useCallback(() => {
     fetchCountries()
-      .then(setCountryOptions)
-      .catch((error: Error) => setErrorMessage(error.message))
+      .then((list) => {
+        setCountryOptions(list)
+        setCountriesError('')
+      })
+      .catch((error: Error) => setCountriesError(error.message))
   }, [])
+
+  useEffect(loadCountries, [loadCountries])
 
   async function handleStart() {
     setIsLoading(true)
@@ -90,11 +96,12 @@ function App() {
   }
 
   const isGuessing = gameState === 'playing' || gameState === 'wrong'
+  const hasCountries = countryOptions.length > 0
 
   return (
     <div className="app-shell">
       {gameState === 'start' ? (
-        <StartScreen onStart={handleStart} isStarting={isLoading} />
+        <StartScreen onStart={handleStart} isStarting={isLoading} error={errorMessage} />
       ) : (
         <main className="game-panel">
           {question ? (
@@ -120,11 +127,30 @@ function App() {
                   </div>
                   <ClueCard clue={question.clue} />
                   <div className="question-title">WHERE ARE WE?</div>
-                  <AnswerGrid
-                    options={countryOptions}
-                    onAnswer={handleAnswer}
-                    disabled={isSubmitting || countryOptions.length === 0}
-                  />
+
+                  {hasCountries ? (
+                    <AnswerGrid
+                      options={countryOptions}
+                      onAnswer={handleAnswer}
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <div className="answer-empty">
+                      <p>{countriesError || 'Loading the country list…'}</p>
+                      {countriesError ? (
+                        <button type="button" className="secondary-button" onClick={loadCountries}>
+                          Retry
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {errorMessage ? (
+                    <p className="answer-input-error" role="alert">
+                      {errorMessage}
+                    </p>
+                  ) : null}
+
                   <ProgressIndicator
                     clueNumber={question.clueNumber}
                     totalClues={question.totalClues}
@@ -134,12 +160,19 @@ function App() {
 
               {gameState === 'lost' && (
                 <section className="wrong-answer" aria-live="polite">
-                  <div className="case-solved__flag">{revealed?.flag ?? '🌍'}</div>
+                  <div className="case-solved__flag" aria-hidden="true">
+                    {revealed?.flag ?? '🌍'}
+                  </div>
                   <h2>The trail goes cold.</h2>
                   <p>It was {revealed?.name ?? 'somewhere else'}.</p>
                   <button type="button" className="primary-button" onClick={handleStart}>
                     New Investigation
                   </button>
+                  {errorMessage ? (
+                    <p className="answer-input-error" role="alert">
+                      {errorMessage}
+                    </p>
+                  ) : null}
                 </section>
               )}
 
@@ -151,14 +184,13 @@ function App() {
                   onNewInvestigation={handleStart}
                   countryName={revealed?.name ?? 'Country'}
                   countryFlag={revealed?.flag ?? '🌍'}
+                  error={errorMessage}
                 />
               )}
             </>
           ) : null}
         </main>
       )}
-
-      {errorMessage ? <p className="answer-input-error">{errorMessage}</p> : null}
     </div>
   )
 }

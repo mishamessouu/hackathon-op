@@ -1,8 +1,11 @@
 .app-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 32px 20px;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
 }
 
 .game-panel {
@@ -16,16 +19,6 @@
   overflow: visible;
 }
 
-.game-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at top, rgba(45, 212, 191, 0.12), transparent 48%),
-    linear-gradient(rgba(148, 163, 184, 0.03), rgba(148, 163, 184, 0.01));
-  pointer-events: none;
-}
-
 .game-panel::after {
   content: '';
   position: absolute;
@@ -37,7 +30,7 @@
 
 .game-panel > * {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .game-header {
@@ -90,6 +83,7 @@
 .header-case strong {
   color: #f8fafc;
   font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .header-case {
@@ -134,7 +128,7 @@
   margin: 0;
   font-size: clamp(2.5rem, 5vw, 4.3rem);
   line-height: 1.04;
-  letter-spacing: -0.06em;
+  text-wrap: balance;
   color: #f8fafc;
 }
 
@@ -142,6 +136,7 @@
   max-width: 560px;
   color: #cbd5e1;
   font-size: 1.08rem;
+  text-wrap: pretty;
 }
 
 .primary-button,
@@ -160,9 +155,9 @@
 }
 
 .primary-button {
-  background: linear-gradient(135deg, #2dd4bf, #34d399);
+  background: #2dd4bf;
   color: #062a2e;
-  box-shadow: 0 12px 30px rgba(45, 212, 191, 0.35);
+  box-shadow: 0 4px 6px -1px rgba(2, 6, 23, 0.4);
 }
 
 .secondary-button {
@@ -196,7 +191,7 @@
 
 .clue-card {
   margin-top: 18px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(15, 23, 42, 0.7));
+  background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 20px;
   padding: 24px 22px;
@@ -208,7 +203,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #6ee7b7;
+  color: #2dd4bf;
   margin-bottom: 14px;
 }
 
@@ -217,6 +212,8 @@
   color: #e2e8f0;
   font-size: clamp(1.2rem, 2vw, 1.8rem);
   line-height: 1.5;
+  text-wrap: pretty;
+  font-variant-numeric: tabular-nums;
 }
 
 .question-title {
@@ -277,7 +274,7 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  z-index: 999;
+  z-index: var(--z-dropdown);
   display: grid;
   gap: 6px;
   max-height: 260px;
@@ -304,8 +301,9 @@
   cursor: pointer;
 }
 
-.answer-dropdown__item:hover {
-  background: rgba(148, 163, 184, 0.08);
+.answer-dropdown__item:hover,
+.answer-dropdown__item[data-active='true'] {
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .answer-dropdown__flag {
@@ -320,6 +318,25 @@
   margin: 0;
   font-size: 0.9rem;
   color: #fca5a5;
+}
+
+.answer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 20px 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  text-align: center;
+}
+
+.answer-empty p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  text-wrap: pretty;
 }
 
 .progress-indicator {
@@ -374,12 +391,14 @@
   margin: 0 0 10px;
   color: #fecaca;
   font-size: 2rem;
+  text-wrap: balance;
 }
 
 .wrong-answer p {
   margin: 0 0 18px;
   color: #fee2e2;
   font-size: 1rem;
+  text-wrap: pretty;
 }
 
 .spacing-top {
@@ -412,7 +431,7 @@
 .case-solved h2 {
   margin: 0;
   font-size: clamp(2rem, 3vw, 2.8rem);
-  letter-spacing: -0.06em;
+  text-wrap: balance;
   color: #f8fafc;
 }
 
@@ -420,6 +439,7 @@
   margin: 10px 0 24px;
   color: #cbd5e1;
   font-size: 1.08rem;
+  text-wrap: pretty;
 }
 
 .case-solved__stats {
@@ -449,6 +469,7 @@
 .case-solved__stats strong {
   color: #f8fafc;
   font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 720px) {
@@ -467,7 +488,6 @@
     justify-self: start;
   }
 
-  .answer-grid,
   .case-solved__stats {
     grid-template-columns: 1fr;
   }
