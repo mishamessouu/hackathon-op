@@ -13,6 +13,7 @@
   /* Fixed z-index scale. Nothing should introduce a one-off value. */
   --z-base: 1;
   --z-dropdown: 10;
+  --z-popover: 50;
 }
 
 * {
