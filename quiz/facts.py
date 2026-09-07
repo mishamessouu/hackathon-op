@@ -28,13 +28,22 @@ DEFAULT_API_URL = "https://api.apogeoapi.com/v1/countries"
 API_KEY_NAMES = ("APOGEOAPI_KEY", "APOGEO_API_KEY")
 
 # Countries whose capital does not name any of their zones. Without these the
-# United States reports Hawaii and French Polynesia reports the Gambiers.
+# United States reports Hawaii and French Polynesia reports the Gambiers. The
+# clue is labelled as the capital's timezone, so every multi-zone country has
+# to resolve here or by capital name - never by whatever the API lists first.
 TIMEZONE_OVERRIDES = {
     "US": "America/New_York",
     "AU": "Australia/Sydney",
     "NZ": "Pacific/Auckland",
     "PF": "Pacific/Tahiti",
     "FM": "Pacific/Pohnpei",
+    "BR": "America/Sao_Paulo",
+    "CA": "America/Toronto",
+    "CN": "Asia/Shanghai",
+    "EC": "America/Guayaquil",
+    "KZ": "Asia/Almaty",
+    "MX": "America/Mexico_City",
+    "MN": "Asia/Ulaanbaatar",
 }
 
 CACHE_TTL_SECONDS = 60 * 60
@@ -120,18 +129,13 @@ def facts_from_record(record: dict) -> dict:
     """Map one ApogeoAPI record onto the clue categories the game renders."""
     facts = {}
 
-    timezones = record.get("timezones") or []
+    # Just the capital's offset. A count of the other zones was tried and it
+    # turned the hardest clue into a name tag: nothing but Russia has ten.
     chosen = _pick_timezone(record)
     if chosen:
         offset = _pretty_offset(chosen.get("gmtOffsetName") or "")
         if offset:
-            zones = len({zone.get("gmtOffsetName") for zone in timezones})
-            others = zones - 1
-            facts["timezone"] = (
-                "{} (and {} other offset{})".format(offset, others, "" if others == 1 else "s")
-                if others
-                else offset
-            )
+            facts["timezone"] = offset
 
     phone_code = record.get("phoneCode")
     if phone_code:
