@@ -3,21 +3,25 @@ import type { Option } from '../types/game'
 
 type AnswerGridProps = {
   options: Option[]
-  countryOptions?: Option[]
-  onAnswer: (optionId: string) => void
+  onAnswer: (countryName: string) => void
   disabled: boolean
 }
 
-export function AnswerGrid({ options, countryOptions, onAnswer, disabled }: AnswerGridProps) {
+const MAX_SUGGESTIONS = 8
+
+export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
   const [inputValue, setInputValue] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const allCountries = countryOptions ?? options
+  const allCountries = options
 
-  const visibleOptions = inputValue.trim()
-    ? allCountries.filter((option) => option.label.toLowerCase().includes(inputValue.trim().toLowerCase()))
-    : allCountries
+  const query = inputValue.trim().toLowerCase()
+  const visibleOptions = (
+    query
+      ? allCountries.filter((option) => option.label.toLowerCase().includes(query))
+      : allCountries
+  ).slice(0, MAX_SUGGESTIONS)
 
   function handleSubmit() {
     const trimmedValue = inputValue.trim()
@@ -31,7 +35,7 @@ export function AnswerGrid({ options, countryOptions, onAnswer, disabled }: Answ
     }
 
     setErrorMessage('')
-    onAnswer(selected.id)
+    onAnswer(selected.label)
   }
 
   function handleSelect(option: Option) {
