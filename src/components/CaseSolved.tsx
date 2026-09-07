@@ -1,6 +1,9 @@
 type CaseSolvedProps = {
   score: number
   roundScore: number
+  /** The clue's own value, before speed. Absent on a pre-timer round. */
+  baseScore?: number
+  timeBonus?: number
   cluesUsed: number
   countryName: string
   countryFlag: string
@@ -11,6 +14,8 @@ type CaseSolvedProps = {
 export function CaseSolved({
   score,
   roundScore,
+  baseScore,
+  timeBonus,
   cluesUsed,
   countryName,
   countryFlag,
@@ -34,6 +39,14 @@ export function CaseSolved({
         <div>
           <span>This case</span>
           <strong>+{roundScore}</strong>
+          {/* An unexplained 1187 reads as arbitrary, which makes the timer feel
+              unfair. Showing the two halves is what makes it feel earned. */}
+          {baseScore !== undefined && timeBonus !== undefined ? (
+            <span className="case-solved__breakdown">
+              {baseScore} base
+              {timeBonus > 0 ? <em> + {timeBonus} speed</em> : ' + no speed bonus'}
+            </span>
+          ) : null}
         </div>
         <div>
           <span>Session total</span>

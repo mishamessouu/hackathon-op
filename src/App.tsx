@@ -1,9 +1,11 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { fetchCountries, startGame, submitAnswer } from './api/game'
+import { readRunId, writeRunId } from './runToken'
 import { AnswerGrid } from './components/AnswerGrid'
 import { CaseSolved } from './components/CaseSolved'
 import { ClueCard } from './components/ClueCard'
+import { ClueTimer } from './components/ClueTimer'
 import { GameHeader } from './components/GameHeader'
 import { ProgressIndicator } from './components/ProgressIndicator'
 import { Quickscope } from './components/Quickscope'
@@ -29,6 +31,7 @@ function App() {
   const [countriesError, setCountriesError] = useState('')
   const [score, setScore] = useState(0)
   const [roundScore, setRoundScore] = useState(0)
+  const [roundBreakdown, setRoundBreakdown] = useState<{ base?: number; bonus?: number }>({})
   const [wrongMessage, setWrongMessage] = useState('')
   const [comparison, setComparison] = useState<GuessComparison | null>(null)
   const [revealed, setRevealed] = useState<RevealedCountry | null>(null)
@@ -37,6 +40,8 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [isQuickscoping, setIsQuickscoping] = useState(false)
+  // Restored from the last visit, so a refresh no longer wipes the total.
+  const [runId, setRunId] = useState<string | null>(readRunId)
 
   // The dropdown list comes from countries.csv via the API.
   const loadCountries = useCallback(() => {
@@ -52,12 +57,22 @@ function App() {
 
   const endQuickscope = useCallback(() => setIsQuickscoping(false), [])
 
+  // The server owns the running total and returns it on every call. The client
+  // renders what it is given and hands the token straight back - it cannot read
+  // the score out of the token, let alone change it.
+  const adoptRun = useCallback((payload: { runId: string; runTotal: number }) => {
+    setRunId(payload.runId)
+    setScore(payload.runTotal)
+    writeRunId(payload.runId)
+  }, [])
+
   async function handleStart() {
     setIsLoading(true)
     setErrorMessage('')
 
     try {
-      const nextQuestion = await startGame()
+      const nextQuestion = await startGame(runId)
+      adoptRun(nextQuestion)
       setQuestion(nextQuestion)
       setRoundScore(0)
       setGuesses([])
@@ -82,7 +97,8 @@ function App() {
     setErrorMessage('')
 
     try {
-      const result = await submitAnswer(question.gameId, option.label)
+      const result = await submitAnswer(question.gameId, option.label, runId)
+      adoptRun(result)
 
       setGuesses((previous) => [
         ...previous,
@@ -98,7 +114,7 @@ function App() {
 
       if (result.correct) {
         setRoundScore(result.score)
-        setScore((previousScore) => previousScore + result.score)
+        setRoundBreakdown({ base: result.baseScore, bonus: result.timeBonus })
         setRevealed(result.country ?? null)
         setGameState('solved')
         setWrongMessage('')
@@ -160,12 +176,25 @@ function App() {
                   three.js and throw away the camera on every state change. */}
               <div className="game-stage">
                 <div className="game-stage__main">
-                  {isGuessing && <ClueCard clue={question.clue} />}
+                  {isGuessing && (
+                    <>
+                      <ClueCard clue={question.clue} />
+                      {/* Keyed on gameId so every clue starts a fresh meter. */}
+                      <ClueTimer
+                        key={question.gameId}
+                        windowMs={question.timerMs}
+                        graceMs={question.graceMs}
+                        maxBonus={question.maxTimeBonus}
+                      />
+                    </>
+                  )}
 
                   {gameState === 'solved' && (
                     <CaseSolved
                       score={score}
                       roundScore={roundScore}
+                      baseScore={roundBreakdown.base}
+                      timeBonus={roundBreakdown.bonus}
                       cluesUsed={question.clueNumber}
                       onNewInvestigation={handleStart}
                       countryName={revealed?.name ?? 'Country'}

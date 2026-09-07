@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import logging
 import random
+import time
+import uuid
 from typing import Any, Optional, Tuple
 
 from flask import Flask, jsonify, request
@@ -18,6 +20,9 @@ from quiz.facts import playable_countries, using_live_api
 from quiz.loop import (
     CATEGORY_LABELS,
     HINT_CATEGORIES,
+    MAX_TIME_BONUS,
+    TIME_GRACE_SECONDS,
+    TIME_WINDOW_SECONDS,
     TOTAL_CLUES,
     build_clue,
     flag_emoji,
@@ -25,6 +30,7 @@ from quiz.loop import (
     load_countries,
     normalise_answer,
     score_for,
+    time_bonus_for,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -46,15 +52,60 @@ def _dropdown_countries() -> list:
 
 
 def _question(state: dict) -> dict:
-    """The payload the frontend renders for the current clue."""
+    """The payload the frontend renders for the current clue.
+
+    Both entry points to a clue - starting a round and advancing after a wrong
+    guess - come through here, so this is the one place the speed clock has to
+    be stamped. The stamp rides inside the encrypted token, which means the
+    player can neither read it nor forge it, and replaying an old gameId only
+    makes their time worse.
+    """
+    state["clue_started_at"] = time.time()
     hint_index = state["hint_index"]
     return {
-        "gameId": session.encode(state),
+        "gameId": session.encode(state, session.KIND_ROUND),
         "caseNumber": state["case"],
         "score": score_for(hint_index),
         "clue": build_clue(hint_index, state["facts"], state["iso2"]),
         "clueNumber": hint_index + 1,
         "totalClues": TOTAL_CLUES,
+        # Durations, not wall-clock times: the client animates a countdown it
+        # was handed, so its own clock never enters the scoring.
+        "timerMs": round(TIME_WINDOW_SECONDS * 1000),
+        "graceMs": round(TIME_GRACE_SECONDS * 1000),
+        "maxTimeBonus": MAX_TIME_BONUS,
+    }
+
+
+def _elapsed_seconds(state: dict) -> Optional[float]:
+    """How long the current clue has been on screen, by the server's clock."""
+    started_at = state.get("clue_started_at")
+    if not isinstance(started_at, (int, float)):
+        return None
+    return time.time() - started_at
+
+
+def _load_run(run_id: Optional[str]) -> dict:
+    """The run the client is continuing, or a fresh one.
+
+    The running total lives here rather than in the browser, so a refresh no
+    longer wipes it and the client cannot report a score it did not earn. An
+    absent, expired, tampered or wrong-kind token quietly starts a new run -
+    there is nothing a player gains by any of those.
+    """
+    run = session.decode(run_id, session.KIND_RUN) if isinstance(run_id, str) else None
+    if run is None:
+        # run_id is unused today. It costs one field and is what a scoreboard
+        # would key on later.
+        return {"run_id": uuid.uuid4().hex, "total": 0, "rounds": 0}
+    return run
+
+
+def _run_payload(run: dict) -> dict:
+    return {
+        "runId": session.encode(run, session.KIND_RUN),
+        "runTotal": run["total"],
+        "runRounds": run["rounds"],
     }
 
 
@@ -143,6 +194,9 @@ def start_game() -> Tuple[Any, int]:
     if not pool:
         return jsonify({"error": "No countries available"}), 503
 
+    payload = request.get_json(silent=True) or {}
+    run = _load_run(payload.get("runId"))
+
     country = random.choice(pool)
     state = {
         "country": country["name"],
@@ -151,7 +205,7 @@ def start_game() -> Tuple[Any, int]:
         "facts": country["facts"],
         "case": "#{:03d}".format(random.randint(1, 999)),
     }
-    return jsonify(_question(state)), 201
+    return jsonify({**_question(state), **_run_payload(run)}), 201
 
 
 @app.post("/api/game/guess")
@@ -163,20 +217,33 @@ def guess() -> Tuple[Any, int]:
     if not isinstance(answer, str) or not answer.strip():
         return jsonify({"error": "answer is required"}), 400
 
-    state = session.decode(game_id)
+    state = session.decode(game_id, session.KIND_ROUND)
     if state is None:
         return jsonify({"error": "This case file has expired. Start a new investigation."}), 400
 
+    # Every branch returns the run, so the client always has a live token to
+    # send back - including the ones that do not change the score.
+    run = _load_run(payload.get("runId"))
     hint_index = state["hint_index"]
 
     if is_correct(answer, state["country"]):
+        base_score = score_for(hint_index)
+        time_bonus = time_bonus_for(_elapsed_seconds(state))
+        round_score = base_score + time_bonus
+        run["total"] += round_score
+        run["rounds"] += 1
         return jsonify(
             {
                 "correct": True,
-                "score": score_for(hint_index),
+                # Broken out because a bare 1187 reads as arbitrary. Showing
+                # "1000 + 187 speed" is what makes the mechanic feel fair.
+                "baseScore": base_score,
+                "timeBonus": time_bonus,
+                "score": round_score,
                 "gameOver": True,
                 "message": "Case solved.",
                 "country": _reveal(state),
+                **_run_payload(run),
             }
         ), 200
 
@@ -191,6 +258,7 @@ def guess() -> Tuple[Any, int]:
                 "message": "The trail goes cold. Start a new investigation.",
                 "country": _reveal(state),
                 "comparison": comparison,
+                **_run_payload(run),
             }
         ), 200
 
@@ -203,6 +271,7 @@ def guess() -> Tuple[Any, int]:
             "message": "Not quite. The investigation continues…",
             "nextQuestion": _question(state),
             "comparison": comparison,
+            **_run_payload(run),
         }
     ), 200
 

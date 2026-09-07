@@ -110,9 +110,42 @@ def flag_emoji(iso2: str) -> str:
     return "".join(chr(ord(character) - ord("A") + 0x1F1E6) for character in code)
 
 
+# Speed bonus. The clock restarts on every clue, so the unit of pressure is one
+# decision rather than the whole round - a global budget would punish the player
+# for the game handing them more to read.
+#
+# MAX_TIME_BONUS is one rung of the ladder, and that is the largest value that
+# still leaves knowledge strictly ahead of speed. At 500 a player who knows the
+# answer but needs fifteen seconds does better to throw a junk guess and answer
+# the next clue instantly (1250 + 500 beats 1500 + 147), which would make losing
+# a clue on purpose the optimal play. At 250 that door is shut.
+TIME_WINDOW_SECONDS = 20.0
+# Nobody reads a clue in zero seconds. Without a grace period the maximum is
+# unreachable and every player feels shortchanged.
+TIME_GRACE_SECONDS = 3.0
+MAX_TIME_BONUS = POINTS_PER_REMAINING_CLUE
+
+
 def score_for(hint_index: int) -> int:
     """Points on offer while the clue at ``hint_index`` is showing."""
     return max(TOTAL_CLUES - hint_index, 1) * POINTS_PER_REMAINING_CLUE
+
+
+def time_bonus_for(elapsed_seconds: Optional[float]) -> int:
+    """Speed bonus for answering ``elapsed_seconds`` after the clue appeared.
+
+    Full marks inside the grace period, then a straight line to zero. ``None``
+    means the round predates the timer, which is worth no bonus rather than a
+    crash.
+    """
+    if elapsed_seconds is None or elapsed_seconds < 0:
+        return 0
+    if elapsed_seconds <= TIME_GRACE_SECONDS:
+        return MAX_TIME_BONUS
+    if elapsed_seconds >= TIME_WINDOW_SECONDS:
+        return 0
+    remaining = TIME_WINDOW_SECONDS - elapsed_seconds
+    return round(MAX_TIME_BONUS * remaining / (TIME_WINDOW_SECONDS - TIME_GRACE_SECONDS))
 
 
 def normalise_answer(value: str) -> str:

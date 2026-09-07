@@ -22,13 +22,22 @@ export async function fetchCountries(): Promise<Option[]> {
   return payload.countries
 }
 
-export async function startGame(): Promise<GameQuestion> {
-  return request<GameQuestion>('/api/game', { method: 'POST' })
+// The run token carries the running total. It is opaque and server-signed, so
+// the client only ever hands back whatever it was last given.
+export async function startGame(runId: string | null): Promise<GameQuestion> {
+  return request<GameQuestion>('/api/game', {
+    method: 'POST',
+    body: JSON.stringify({ runId }),
+  })
 }
 
-export async function submitAnswer(gameId: string, answer: string): Promise<AnswerResponse> {
+export async function submitAnswer(
+  gameId: string,
+  answer: string,
+  runId: string | null,
+): Promise<AnswerResponse> {
   return request<AnswerResponse>('/api/game/guess', {
     method: 'POST',
-    body: JSON.stringify({ gameId, answer }),
+    body: JSON.stringify({ gameId, answer, runId }),
   })
 }

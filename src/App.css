@@ -1023,3 +1023,70 @@
     transform: translate3d(var(--drift), 125vh, 0) rotate(var(--spin));
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Speed-bonus meter. Drains across the clue on screen and restarts on the next
+   one. See components/ClueTimer.tsx - the server owns the real clock.
+   --------------------------------------------------------------------------- */
+
+.clue-timer {
+  margin: 14px 0 4px;
+}
+
+.clue-timer__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.7rem;
+  color: #9aa5b1;
+}
+
+.clue-timer__label strong {
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.clue-timer[data-spent] .clue-timer__label,
+.clue-timer[data-spent] .clue-timer__label strong {
+  color: #64748b;
+}
+
+.clue-timer__track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  overflow: hidden;
+}
+
+.clue-timer__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: hsl(var(--fill-hue, 172) 85% 55%);
+  box-shadow: 0 0 14px hsl(var(--fill-hue, 172) 85% 55% / 0.5);
+  transform-origin: left center;
+  /* Bridges the 100ms ticks into a continuous drain. Under
+     prefers-reduced-motion the global reset flattens this and the bar steps
+     instead, which is the right degradation rather than a broken one. */
+  transition:
+    transform 100ms linear,
+    background-color 300ms linear;
+}
+
+.case-solved__breakdown {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  text-transform: none;
+}
+
+.case-solved__breakdown em {
+  color: #2dd4bf;
+  font-style: normal;
+}
