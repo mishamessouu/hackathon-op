@@ -90,13 +90,18 @@ def _comparison(state: dict, guess: str) -> Optional[dict]:
     if entry is None:
         return None
 
+    value = entry["facts"].get(category) or "No data"
+    # The target value was already on screen as the clue, so it is not a leak.
+    target = state["facts"].get(category) or "No data"
+
     return {
         "name": entry["name"],
-        "flag": entry["facts"].get("flag") or flag_emoji(entry["iso2"]),
         "category": CATEGORY_LABELS.get(category, category),
-        "value": entry["facts"].get(category) or "No data",
-        # The target value was already on screen as the clue, so it is not a leak.
-        "target": state["facts"].get(category) or "No data",
+        "value": value,
+        "target": target,
+        # 18 countries share +1, so matching a clue and still being wrong is
+        # common. Saying so beats rendering "+1 -> you need +1".
+        "matches": value == target,
     }
 
 
@@ -120,7 +125,6 @@ def countries() -> Tuple[Any, int]:
                 {
                     "id": country.iso2 or country.name,
                     "label": country.name,
-                    "flag": flag_emoji(country.iso2),
                     # Everything the globe needs to place a guess: the polygon
                     # key, plus a position for countries with no polygon.
                     "numericCode": country.numeric_code,

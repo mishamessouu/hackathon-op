@@ -17,16 +17,22 @@ export function WrongAnswer({ message, comparison }: WrongAnswerProps) {
         <p>{message}</p>
         {comparison ? (
           <p className="guess-compare">
-            <span className="guess-compare__flag" aria-hidden="true">
-              {comparison.flag}
-            </span>
+            {/* The clue has already advanced by the time this renders, so it
+                has to name the clue it is actually talking about. */}
+            <span className="guess-compare__category">{comparison.category}</span>
             <span className="guess-compare__name">{comparison.name}</span>
             <span className="guess-compare__value">{comparison.value}</span>
-            <span className="guess-compare__sep" aria-hidden="true">
-              →
-            </span>
-            <span className="guess-compare__label">you need</span>
-            <span className="guess-compare__target">{comparison.target}</span>
+            {comparison.matches ? (
+              <span className="guess-compare__same">— same, but not the country</span>
+            ) : (
+              <>
+                <span className="guess-compare__sep" aria-hidden="true">
+                  →
+                </span>
+                <span className="guess-compare__label">you need</span>
+                <span className="guess-compare__target">{comparison.target}</span>
+              </>
+            )}
           </p>
         ) : null}
       </div>

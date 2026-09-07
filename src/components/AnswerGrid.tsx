@@ -91,12 +91,7 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
               <Combobox.List>
                 {(option: Option) => (
                   <Combobox.Item key={option.id} value={option} className="country-item">
-                    {option.flag ? (
-                      <span className="country-item__flag" aria-hidden="true">
-                        {option.flag}
-                      </span>
-                    ) : null}
-                    <span>{option.label}</span>
+                    {option.label}
                   </Combobox.Item>
                 )}
               </Combobox.List>

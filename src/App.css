@@ -204,12 +204,22 @@
 .game-stage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
-  align-items: center;
+  align-items: stretch;
   gap: 20px;
 }
 
 .game-stage__main {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.game-stage__main > .clue-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .guess-globe {
@@ -360,10 +370,6 @@
   background: rgba(148, 163, 184, 0.12);
 }
 
-.country-item__flag {
-  font-size: 1.1rem;
-}
-
 .country-empty {
   padding: 12px;
   color: #94a3b8;
@@ -497,12 +503,22 @@
   color: #fee2e2;
 }
 
-.guess-compare__flag {
-  font-size: 1rem;
+.guess-compare__category {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  padding: 3px 8px;
 }
 
 .guess-compare__name {
   font-weight: 700;
+}
+
+.guess-compare__same {
+  color: #fca5a5;
 }
 
 .guess-compare__value {

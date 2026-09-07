@@ -1,7 +1,6 @@
 export type Option = {
   id: string
   label: string
-  flag?: string
   /** ISO 3166-1 numeric — how world-atlas keys its country polygons. */
   numericCode: string
   lat: number | null
@@ -45,10 +44,11 @@ export type RevealedCountry = {
 /** How the guessed country answers the clue that was on screen. */
 export type GuessComparison = {
   name: string
-  flag: string
   category: string
   value: string
   target: string
+  /** True when the guess answers this clue the same way the answer does. */
+  matches: boolean
 }
 
 export type AnswerResponse = {
