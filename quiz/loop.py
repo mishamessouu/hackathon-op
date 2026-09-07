@@ -30,7 +30,7 @@ TOTAL_CLUES = len(HINT_CATEGORIES)
 POINTS_PER_REMAINING_CLUE = 250
 
 CATEGORY_LABELS = {
-    "timezone": "🕐 Timezone",
+    "timezone": "🕐 Capital's timezone",
     "phone_code": "📞 Phone code",
     "population": "👥 Population",
     "currency_shorthand": "💰 Currency",
