@@ -42,7 +42,8 @@ key the backend falls back to a bundled fixture set of 12 countries and
 ## How a round works
 
 Six clues, hardest to easiest: timezone → phone code → population → currency →
-capital → flag. A wrong guess reveals the next clue and drops the score by 250,
+capital → flag. A wrong guess - or a skip, for when you have no clue - reveals
+the next clue and drops the score by 250,
 from 1500 down to 250. A round ends on a correct guess or after the last clue.
 
 Answering fast earns up to 250 on top. The bonus is worth full marks for the
@@ -88,6 +89,9 @@ process refuses to start instead.
   `nextQuestion` while the round continues or `country` once it ends. A correct
   answer also breaks `score` into `baseScore` and `timeBonus`. Every branch
   returns the run, so the client always has a live `runId` to send back.
+- `POST /api/game/skip` — body `{ gameId, runId }`. Pass on the clue: the
+  same response as a wrong guess, minus `comparison`, since there is no guess
+  to compare. On the last clue it ends the round and reveals the country.
 
 Answer matching is case- and accent-insensitive, so `cote d'ivoire` matches
 `Côte d’Ivoire`.

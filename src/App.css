@@ -245,6 +245,59 @@
   opacity: 0.7;
 }
 
+/* The one thing to do on the start screen, so it looks like it. Lit at rest -
+   which is all a reduced-motion user gets, and enough - with the pulse on top. */
+.start-button {
+  box-shadow:
+    0 0 0 0 rgba(45, 212, 191, 0.55),
+    0 0 26px rgba(45, 212, 191, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 6px -1px rgba(2, 6, 23, 0.4);
+  animation: start-button-pulse 2.2s ease-in-out infinite;
+}
+
+/* A running animation would override the hover shadow, so hover trades the
+   pulse for a steady, brighter glow. */
+.start-button:hover {
+  animation: none;
+  box-shadow:
+    0 0 0 6px rgba(45, 212, 191, 0.18),
+    0 0 44px rgba(45, 212, 191, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 6px 10px -1px rgba(2, 6, 23, 0.45);
+}
+
+.start-button:disabled {
+  animation: none;
+}
+
+@keyframes start-button-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(45, 212, 191, 0.55),
+      0 0 26px rgba(45, 212, 191, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 4px 6px -1px rgba(2, 6, 23, 0.4);
+  }
+  40% {
+    box-shadow:
+      0 0 0 7px rgba(45, 212, 191, 0.14),
+      0 0 44px rgba(45, 212, 191, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 4px 6px -1px rgba(2, 6, 23, 0.4);
+  }
+  /* The ring finishes expanding fully transparent, so the jump back to the
+     0% frame - a ring of zero size - is invisible. */
+  70%,
+  100% {
+    box-shadow:
+      0 0 0 14px rgba(45, 212, 191, 0),
+      0 0 26px rgba(45, 212, 191, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 4px 6px -1px rgba(2, 6, 23, 0.4);
+  }
+}
+
 .clue-header {
   margin-top: 24px;
   margin-bottom: 18px;
@@ -364,6 +417,22 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #9aa5b1;
+}
+
+.answer-input-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Same width as Submit and directly over it, so the two read as the pair they
+   are: commit to a guess, or pass on the clue. */
+.answer-skip {
+  min-width: 140px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .answer-input-row {

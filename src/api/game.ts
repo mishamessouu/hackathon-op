@@ -41,3 +41,12 @@ export async function submitAnswer(
     body: JSON.stringify({ gameId, answer, runId }),
   })
 }
+
+// Same shape as an answer: the round moves on exactly as after a wrong guess,
+// minus the comparison, since there is no guess to compare.
+export async function skipClue(gameId: string, runId: string | null): Promise<AnswerResponse> {
+  return request<AnswerResponse>('/api/game/skip', {
+    method: 'POST',
+    body: JSON.stringify({ gameId, runId }),
+  })
+}

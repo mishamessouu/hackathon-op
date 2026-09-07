@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import './App.css'
-import { fetchCountries, startGame, submitAnswer } from './api/game'
+import { fetchCountries, skipClue, startGame, submitAnswer } from './api/game'
 import { readRunId, writeRunId } from './runToken'
 import { AnswerGrid } from './components/AnswerGrid'
 import { CaseSolved } from './components/CaseSolved'
@@ -13,6 +13,7 @@ import { StartScreen } from './components/StartScreen'
 import { GlobeBoundary } from './components/GlobeBoundary'
 import { WrongAnswer } from './components/WrongAnswer'
 import type {
+  AnswerResponse,
   Guess,
   GameQuestion,
   GameState,
@@ -41,6 +42,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [isQuickscoping, setIsQuickscoping] = useState(false)
+  const [skipped, setSkipped] = useState(false)
   // Restored from the last visit, so a refresh no longer wipes the total.
   const [runId, setRunId] = useState<string | null>(readRunId)
 
@@ -81,6 +83,7 @@ function App() {
       setComparison(null)
       setRevealed(null)
       setIsQuickscoping(false)
+      setSkipped(false)
       setGameState('playing')
     } catch (error) {
       setErrorMessage((error as Error).message)
@@ -124,19 +127,46 @@ function App() {
         return
       }
 
-      setWrongMessage(result.message ?? 'Not quite. The investigation continues…')
-      setComparison(result.comparison ?? null)
+      setSkipped(false)
+      settleMiss(result, 'Not quite. The investigation continues…')
+    } catch (error) {
+      setErrorMessage((error as Error).message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
-      if (result.gameOver) {
-        setRevealed(result.country ?? null)
-        setGameState('lost')
-        return
-      }
+  // A wrong guess and a skip land the same way: the clue advances, or the
+  // round ends on the last one. Only the message and the comparison differ.
+  function settleMiss(result: AnswerResponse, fallback: string) {
+    setWrongMessage(result.message ?? fallback)
+    setComparison(result.comparison ?? null)
 
-      if (result.nextQuestion) {
-        setQuestion(result.nextQuestion)
-      }
-      setGameState('wrong')
+    if (result.gameOver) {
+      setRevealed(result.country ?? null)
+      setGameState('lost')
+      return
+    }
+
+    if (result.nextQuestion) {
+      setQuestion(result.nextQuestion)
+    }
+    setGameState('wrong')
+  }
+
+  async function handleSkip() {
+    if (!question || isSubmitting) {
+      return
+    }
+
+    setIsSubmitting(true)
+    setErrorMessage('')
+
+    try {
+      const result = await skipClue(question.gameId, runId)
+      adoptRun(result)
+      setSkipped(true)
+      settleMiss(result, 'Skipped. On to the next clue.')
     } catch (error) {
       setErrorMessage((error as Error).message)
     } finally {
@@ -164,7 +194,11 @@ function App() {
               />
 
               {gameState === 'wrong' && (
-                <WrongAnswer message={wrongMessage} comparison={comparison} />
+                <WrongAnswer
+                  message={wrongMessage}
+                  comparison={comparison}
+                  icon={skipped ? '⏭️' : '❌'}
+                />
               )}
 
               {isGuessing && (
@@ -248,6 +282,7 @@ function App() {
                     <AnswerGrid
                       options={countryOptions}
                       onAnswer={handleAnswer}
+                      onSkip={handleSkip}
                       disabled={isSubmitting}
                     />
                   ) : (
