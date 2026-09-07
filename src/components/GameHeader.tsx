@@ -1,3 +1,5 @@
+import quizIcon from '../../quiz-icon.jpeg'
+
 type GameHeaderProps = {
   caseNumber: string
   score: number
@@ -16,11 +18,9 @@ export function GameHeader({
   return (
     <header className="game-header">
       <div className="brand-group">
-        <span className="brand-mark" aria-hidden="true">
-          🕵️
-        </span>
+        <img className="brand-mark" src={quizIcon} alt="" aria-hidden="true" />
         <div>
-          <p className="eyebrow">API DETECTIVE</p>
+          <p className="eyebrow">RUNTIME REBELS</p>
         </div>
       </div>
 

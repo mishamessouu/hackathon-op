@@ -49,7 +49,13 @@
 }
 
 .brand-mark {
-  font-size: 1.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.45);
 }
 
 .eyebrow,
@@ -123,7 +129,7 @@
 .start-screen__badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.25);

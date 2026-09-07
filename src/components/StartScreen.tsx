@@ -1,3 +1,5 @@
+import quizIcon from '../../quiz-icon.jpeg'
+
 type StartScreenProps = {
   onStart: () => void
   isStarting: boolean
@@ -23,7 +25,8 @@ export function StartScreen({ onStart, isStarting, error }: StartScreenProps) {
   return (
     <section className="start-screen">
       <div className="start-screen__badge">
-        <span aria-hidden="true">🕵️</span> API DETECTIVE
+        <img className="brand-mark" src={quizIcon} alt="" aria-hidden="true" />
+        <span>RUNTIME REBELS</span>
       </div>
       <h1>Six clues. One country. Name it before the trail goes cold.</h1>
       <p className="start-screen__subtitle">
