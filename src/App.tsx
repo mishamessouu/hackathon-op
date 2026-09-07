@@ -19,6 +19,7 @@ import type {
   GuessComparison,
   Option,
   RevealedCountry,
+  RunState,
 } from './types/game'
 
 // three.js is heavy, so it must not block the first paint.
@@ -60,7 +61,7 @@ function App() {
   // The server owns the running total and returns it on every call. The client
   // renders what it is given and hands the token straight back - it cannot read
   // the score out of the token, let alone change it.
-  const adoptRun = useCallback((payload: { runId: string; runTotal: number }) => {
+  const adoptRun = useCallback((payload: RunState) => {
     setRunId(payload.runId)
     setScore(payload.runTotal)
     writeRunId(payload.runId)

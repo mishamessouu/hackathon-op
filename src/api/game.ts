@@ -1,4 +1,4 @@
-import type { AnswerResponse, GameQuestion, Option } from '../types/game'
+import type { AnswerResponse, GameQuestion, Option, RunState } from '../types/game'
 
 // Same-origin in production; the Vite dev server proxies /api to Flask.
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
@@ -24,8 +24,8 @@ export async function fetchCountries(): Promise<Option[]> {
 
 // The run token carries the running total. It is opaque and server-signed, so
 // the client only ever hands back whatever it was last given.
-export async function startGame(runId: string | null): Promise<GameQuestion> {
-  return request<GameQuestion>('/api/game', {
+export async function startGame(runId: string | null): Promise<GameQuestion & RunState> {
+  return request<GameQuestion & RunState>('/api/game', {
     method: 'POST',
     body: JSON.stringify({ runId }),
   })

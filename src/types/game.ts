@@ -23,6 +23,18 @@ export type Clue = {
   text: string
 }
 
+/**
+ * The run token and what it carries. Returned beside a question when a round
+ * starts and at the top level of every answer - never inside `nextQuestion`,
+ * which is why it is not part of GameQuestion.
+ */
+export type RunState = {
+  /** Opaque, server-signed. Carries the running total; hand it back untouched. */
+  runId: string
+  runTotal: number
+  runRounds: number
+}
+
 export type GameQuestion = {
   gameId: string
   caseNumber: string
@@ -35,10 +47,6 @@ export type GameQuestion = {
   /** Opening stretch worth full marks, so reading the clue is free. */
   graceMs: number
   maxTimeBonus: number
-  /** Opaque, server-signed. Carries the running total; hand it back untouched. */
-  runId: string
-  runTotal: number
-  runRounds: number
 }
 
 export type RevealedCountry = {
@@ -60,17 +68,13 @@ export type GuessComparison = {
   matches: boolean
 }
 
-export type AnswerResponse = {
+export type AnswerResponse = RunState & {
   correct: boolean
   /** Total awarded: the clue's base value plus the speed bonus. */
   score: number
   /** Present on a correct answer. The server's clock is the authority here. */
   baseScore?: number
   timeBonus?: number
-  /** Returned on every branch, so the run token always stays live. */
-  runId: string
-  runTotal: number
-  runRounds: number
   gameOver: boolean
   message?: string
   nextQuestion?: GameQuestion
