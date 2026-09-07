@@ -201,12 +201,6 @@ function App() {
                 />
               )}
 
-              {isGuessing && (
-                <div className={gameState === 'wrong' ? 'clue-header spacing-top' : 'clue-header'}>
-                  <span className="clue-badge">CASE FILE</span>
-                </div>
-              )}
-
               {/* One globe for the whole round: remounting it would restart
                   three.js and throw away the camera on every state change. */}
               <div className="game-stage">
