@@ -3,6 +3,7 @@
   display: grid;
   place-items: center;
   padding: 32px 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
   padding-left: max(20px, env(safe-area-inset-left));
   padding-right: max(20px, env(safe-area-inset-right));
   padding-bottom: max(32px, env(safe-area-inset-bottom));
@@ -35,7 +36,10 @@
 
 .game-header {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  /* Four children: brand, score, case, clue progress. Three columns here
+     used to push the progress block onto a second row under the score. The
+     narrow-screen rules below reflow it on purpose; this one should not. */
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
   gap: 16px;
   padding-bottom: 18px;
@@ -116,7 +120,7 @@
 }
 
 .start-screen {
-  min-height: 620px;
+  min-height: min(620px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -143,8 +147,8 @@
 .start-screen h1 {
   max-width: 700px;
   margin: 0;
-  font-size: clamp(2.5rem, 5vw, 4.3rem);
-  line-height: 1.04;
+  font-size: clamp(1.9rem, 6vw, 4.3rem);
+  line-height: 1.08;
   text-wrap: balance;
   color: #f8fafc;
 }
@@ -744,9 +748,16 @@
     padding: 18px 16px 20px;
   }
 
+  /* Four stacked rows ate the top of the screen. Brand on one row, the three
+     readouts side by side on the next. */
   .game-header {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, auto));
     justify-items: start;
+    gap: 12px 16px;
+  }
+
+  .brand-group {
+    grid-column: 1 / -1;
   }
 
   .header-metrics,
@@ -772,12 +783,116 @@
     justify-self: center;
   }
 
-  .progress-indicator {
-    flex-direction: column;
-  }
-
   .start-steps {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Phones ------------------------------------------------------------------ */
+@media (max-width: 560px) {
+  .app-shell {
+    padding: 16px 12px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .game-panel {
+    border-radius: 20px;
+    padding: 16px 14px 18px;
+  }
+
+  .game-panel::after {
+    inset: 8px;
+  }
+
+  /* Three readouts plus gaps overrun a 320px screen. Wrapping adapts to any
+     width instead of betting on a column count that fits. */
+  .game-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+  }
+
+  .brand-group {
+    flex: 1 0 100%;
+  }
+
+  /* A 140px button beside the field left barely 170px to type in. */
+  .answer-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Skip keeps Submit's width on desktop so the two read as a pair. On a phone
+     that pairing costs a whole extra row, so it shrinks to its label instead. */
+  .answer-input-header {
+    flex-wrap: wrap;
+  }
+
+  .answer-skip {
+    min-width: 0;
+  }
+
+  .answer-submit {
+    width: 100%;
+  }
+
+  /* The globe sits between the clue and the answer field, so every pixel it
+     takes pushes the input further down the page. */
+  .guess-globe {
+    max-width: 190px;
+  }
+
+  .game-stage {
+    gap: 14px;
+  }
+
+  .clue-card {
+    padding: 18px 16px;
+  }
+
+  .start-screen {
+    gap: 16px;
+    padding: 8px 4px;
+  }
+
+  .start-step {
+    padding: 12px 14px;
+  }
+
+  .question-title {
+    margin: 20px 0 12px;
+  }
+
+  .case-solved__stats {
+    gap: 10px;
+  }
+
+  .progress-indicator {
+    gap: 12px;
+    margin-top: 18px;
+  }
+}
+
+/* Touch input ------------------------------------------------------------- */
+@media (pointer: coarse) {
+  /* 40px rows are below the comfortable tap target, and this list is the one
+     control the whole game runs through. */
+  .country-item {
+    min-height: 44px;
+    padding: 12px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 44px;
+  }
+
+  .country-popup {
+    max-height: min(50dvh, 320px);
   }
 }
 
