@@ -68,6 +68,16 @@ def get_api_key() -> Optional[str]:
     return None
 
 
+# A hyphen-minus is easy to misread as a plus at small sizes, and a UTC offset
+# is otherwise identical either way. U+2212 is wider and sits at the same
+# optical height as the plus, so the sign reads at a glance.
+MINUS_SIGN = "\u2212"
+
+
+def _pretty_offset(value: str) -> str:
+    return value.replace("-", MINUS_SIGN) if value else value
+
+
 def _format_population(value) -> Optional[str]:
     try:
         people = int(value)
@@ -110,7 +120,7 @@ def facts_from_record(record: dict) -> dict:
     timezones = record.get("timezones") or []
     chosen = _pick_timezone(record)
     if chosen:
-        offset = chosen.get("gmtOffsetName")
+        offset = _pretty_offset(chosen.get("gmtOffsetName") or "")
         if offset:
             zones = len({zone.get("gmtOffsetName") for zone in timezones})
             others = zones - 1
@@ -206,7 +216,11 @@ def playable_countries() -> List[dict]:
 
     logger.warning("Falling back to offline fixture facts (%d countries)", len(OFFLINE_FACTS))
     _cache = [
-        {"name": name, "iso2": "", "facts": dict(facts)}
+        {
+            "name": name,
+            "iso2": "",
+            "facts": dict(facts, timezone=_pretty_offset(facts.get("timezone", ""))),
+        }
         for name, facts in sorted(OFFLINE_FACTS.items())
     ]
     _cached_at = time.time()

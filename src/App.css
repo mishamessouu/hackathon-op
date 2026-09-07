@@ -521,8 +521,12 @@
   color: #fca5a5;
 }
 
+/* This line is the smallest place an offset appears, so the sign needs the
+   extra weight to stay distinct from a plus. */
 .guess-compare__value {
   color: #fca5a5;
+  font-size: 0.95rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -533,6 +537,7 @@
 
 .guess-compare__target {
   color: #2dd4bf;
+  font-size: 0.95rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
