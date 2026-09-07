@@ -1,6 +1,6 @@
 type CaseSolvedProps = {
-  caseNumber: string
   score: number
+  roundScore: number
   cluesUsed: number
   countryName: string
   countryFlag: string
@@ -9,8 +9,8 @@ type CaseSolvedProps = {
 }
 
 export function CaseSolved({
-  caseNumber,
   score,
+  roundScore,
   cluesUsed,
   countryName,
   countryFlag,
@@ -32,12 +32,12 @@ export function CaseSolved({
           <strong>{cluesUsed}</strong>
         </div>
         <div>
-          <span>Final score</span>
-          <strong>{score}</strong>
+          <span>This case</span>
+          <strong>+{roundScore}</strong>
         </div>
         <div>
-          <span>Case</span>
-          <strong>{caseNumber}</strong>
+          <span>Session total</span>
+          <strong>{score}</strong>
         </div>
       </div>
 

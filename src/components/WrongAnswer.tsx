@@ -1,20 +1,16 @@
 type WrongAnswerProps = {
   message: string
-  onContinue: () => void
-  isContinuing: boolean
 }
 
-export function WrongAnswer({ message, onContinue, isContinuing }: WrongAnswerProps) {
+// The clue card and answer field stay live underneath, so this is feedback
+// only - it needs no button of its own to move the round on.
+export function WrongAnswer({ message }: WrongAnswerProps) {
   return (
-    <section className="wrong-answer" aria-live="polite">
-      <div className="wrong-answer__icon" aria-hidden="true">
+    <section className="wrong-answer wrong-answer--inline" aria-live="polite">
+      <span className="wrong-answer__icon" aria-hidden="true">
         ❌
-      </div>
-      <h2>Not quite.</h2>
+      </span>
       <p>{message}</p>
-      <button type="button" className="secondary-button" onClick={onContinue} disabled={isContinuing}>
-        {isContinuing ? 'Reviewing clues...' : 'Continue investigation'}
-      </button>
     </section>
   )
 }

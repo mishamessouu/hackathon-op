@@ -2,9 +2,17 @@ type GameHeaderProps = {
   caseNumber: string
   score: number
   clueNumber: number
+  totalClues: number
+  clueValue: number
 }
 
-export function GameHeader({ caseNumber, score, clueNumber }: GameHeaderProps) {
+export function GameHeader({
+  caseNumber,
+  score,
+  clueNumber,
+  totalClues,
+  clueValue,
+}: GameHeaderProps) {
   return (
     <header className="game-header">
       <div className="brand-group">
@@ -29,7 +37,10 @@ export function GameHeader({ caseNumber, score, clueNumber }: GameHeaderProps) {
       </div>
 
       <div className="header-progress">
-        <span className="progress-label">CLUE {clueNumber}</span>
+        <span className="progress-label">
+          CLUE {clueNumber} OF {totalClues}
+        </span>
+        <strong className="clue-value">{clueValue} PTS</strong>
       </div>
     </header>
   )

@@ -35,18 +35,21 @@ export function AnswerGrid({ options, onAnswer, disabled }: AnswerGridProps) {
       return
     }
 
-    setErrorMessage('')
-    setIsOpen(false)
-    setActiveIndex(-1)
-    onAnswer(selected.label)
+    guess(selected.label)
   }
 
+  // Picking from the list is the guess; it should not need a second confirm.
   function handleSelect(option: Option) {
-    setInputValue(option.label)
+    guess(option.label)
+  }
+
+  function guess(countryName: string) {
+    setInputValue('')
     setErrorMessage('')
     setIsOpen(false)
     setActiveIndex(-1)
     inputRef.current?.focus()
+    onAnswer(countryName)
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {

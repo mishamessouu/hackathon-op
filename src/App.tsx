@@ -16,6 +16,7 @@ function App() {
   const [countryOptions, setCountryOptions] = useState<Option[]>([])
   const [countriesError, setCountriesError] = useState('')
   const [score, setScore] = useState(0)
+  const [roundScore, setRoundScore] = useState(0)
   const [wrongMessage, setWrongMessage] = useState('')
   const [revealed, setRevealed] = useState<RevealedCountry | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -41,7 +42,7 @@ function App() {
     try {
       const nextQuestion = await startGame()
       setQuestion(nextQuestion)
-      setScore(0)
+      setRoundScore(0)
       setWrongMessage('')
       setRevealed(null)
       setGameState('playing')
@@ -64,6 +65,7 @@ function App() {
       const result = await submitAnswer(question.gameId, answer)
 
       if (result.correct) {
+        setRoundScore(result.score)
         setScore((previousScore) => previousScore + result.score)
         setRevealed(result.country ?? null)
         setGameState('solved')
@@ -90,11 +92,6 @@ function App() {
     }
   }
 
-  function continueInvestigation() {
-    setGameState('playing')
-    setWrongMessage('')
-  }
-
   const isGuessing = gameState === 'playing' || gameState === 'wrong'
   const hasCountries = countryOptions.length > 0
 
@@ -110,15 +107,11 @@ function App() {
                 caseNumber={question.caseNumber}
                 score={score}
                 clueNumber={question.clueNumber}
+                totalClues={question.totalClues}
+                clueValue={question.score}
               />
 
-              {gameState === 'wrong' && (
-                <WrongAnswer
-                  message={wrongMessage}
-                  onContinue={continueInvestigation}
-                  isContinuing={isSubmitting}
-                />
-              )}
+              {gameState === 'wrong' && <WrongAnswer message={wrongMessage} />}
 
               {isGuessing && (
                 <>
@@ -178,8 +171,8 @@ function App() {
 
               {gameState === 'solved' && (
                 <CaseSolved
-                  caseNumber={question.caseNumber}
                   score={score}
+                  roundScore={roundScore}
                   cluesUsed={question.clueNumber}
                   onNewInvestigation={handleStart}
                   countryName={revealed?.name ?? 'Country'}
